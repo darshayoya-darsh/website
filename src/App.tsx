@@ -17,6 +17,9 @@ const FACULTIES: Faculty[] = [
     { id: 'girls-assiut', ar: 'علوم بنات', en: 'Science — Girls', city: 'أسيوط' },
 ];
 
+const ASTRO_TRACKS = ['فلك وأرصاد', 'فلك خاص', 'أرصاد خاص'];
+const deptsFor = (facultyId: string) => DEPARTMENTS.filter(d => !d.onlyFaculties || d.onlyFaculties.includes(facultyId));
+
 const YEAR_NAMES: Record<number, string> = { 1: 'السنة الأولى', 2: 'السنة الثانية', 3: 'السنة الثالثة', 4: 'السنة الرابعة' };
 
 const NEWS = [
@@ -133,13 +136,13 @@ function Footer() {
             </div>
             <div className="azu-footer-col">
                 <div className="azu-footer-head">Support</div>
-                <span className="azu-footer-note">FAQ — coming soon</span>
-                <span className="azu-footer-note">Contact Us — coming soon</span>
-                <span className="azu-footer-note">Report an Issue — coming soon</span>
+                <span className="azu-footer-note">FAQ — قريبًا</span>
+                <span className="azu-footer-note">Contact Us — قريبًا</span>
+                <span className="azu-footer-note">Report an Issue — قريبًا</span>
             </div>
             <div className="azu-footer-col">
                 <div className="azu-footer-head">Follow Us</div>
-                <span className="azu-footer-note">Social links — coming soon</span>
+                <span className="azu-footer-note">Social Links — قريبًا</span>
                 <span className="azu-footer-line">Together for a brighter scientific future.</span>
             </div>
         </div>
@@ -233,7 +236,7 @@ function Home() {
             </div>
             <Reveal stagger className="azu-news-grid">
                 {NEWS.map(n => <article key={n.title} className="azu-news-card">
-                    <PhotoSlot label="صورة الخبر — بتجهز" ratio="16 / 9" />
+                    <PhotoSlot label="صورة الخبر — قريبًا" ratio="16 / 9" />
                     <div className="azu-news-body">
                         <div className="azu-news-meta"><span className="azu-chip">{n.chip}</span><span className="azu-news-date">{n.date}</span></div>
                         <div className="azu-news-title">{n.title}</div>
@@ -288,7 +291,7 @@ function FacultyPage({ faculty }: { faculty: Faculty }) {
             <Link to={`/academic/${faculty.id}/basic`} className="azu-choice">
                 <span className="azu-choice-icon"><Icon name="books" size={28} /></span>
                 <span className="azu-choice-title" dir="rtl">أقسام أساسية</span>
-                <span className="azu-choice-text">الأقسام العلمية الرئيسية بالكلية: فيزياء ورياضيات، كيمياء، جيولوجيا، بيولوجي.</span>
+                <span className="azu-choice-text">الأقسام العلمية الرئيسية بالكلية: {deptsFor(faculty.id).map(d => d.ar).join('، ')}.</span>
                 <span className="azu-card-arrow"><Icon name="arrow" size={15} /></span>
             </Link>
             <Link to={`/academic/${faculty.id}/special`} className="azu-choice">
@@ -308,7 +311,7 @@ function BasicDepartments({ faculty }: { faculty: Faculty }) {
         <h2 className="azu-title" dir="rtl">الأقسام الأساسية</h2>
         <p className="azu-lead">اختار قسمك عشان توصل للفرق والتخصصات.</p>
         <Reveal stagger className="azu-dept-list">
-            {DEPARTMENTS.map(d => <Link key={d.id} to={`/academic/${faculty.id}/basic/${d.id}`} className="azu-dept">
+            {deptsFor(faculty.id).map(d => <Link key={d.id} to={`/academic/${faculty.id}/basic/${d.id}`} className="azu-dept">
                 <span className="azu-dept-icon"><Icon name={d.icon} size={24} /></span>
                 <span className="azu-dept-names">
                     <span className="azu-dept-ar" dir="rtl">{d.ar}</span>
@@ -397,7 +400,7 @@ function ProgramPage({ faculty, program }: { faculty: Faculty; program: Program 
                 {program.careers.map(c => <span key={c} className="azu-chip2" dir="rtl">{c}</span>)}
             </Reveal>
         </div>}
-        {program.pending && <div className="azu-empty"><Icon name="spark" size={26} /><p>البروشور الرسمي للبرنامج لسه بيوصل — الساعات واللغة والتفاصيل الكاملة هتتضاف هنا فور وصولها.</p></div>}
+        {program.pending && <div className="azu-empty"><Icon name="spark" size={26} /><p>التفاصيل الكاملة للبرنامج — قريبًا.</p></div>}
         <div className="azu-backrow"><Link to={`/academic/${faculty.id}/special`} className="azu-btn azu-btn-outline"><Icon name="back" size={15} /> كل البرامج المتميزة</Link></div>
     </section>;
 }
@@ -455,8 +458,8 @@ function DepartmentPage({ faculty, dept }: { faculty: Faculty; dept: Dept }) {
 }
 
 function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year: number }) {
-    const specs = dept.years[year] ?? [];
-    const notes = dept.yearNotes?.[year] ?? [];
+    const specs = (dept.years[year] ?? []).filter(s => faculty.id === 'boys-cairo' || !ASTRO_TRACKS.includes(s));
+    const notes = (dept.yearNotes?.[year] ?? []).filter(n => faculty.id === 'boys-cairo' || !n.includes('الفلك والأرصاد'));
     const tracks = dept.tracks?.[year] ?? [];
     const groups = dept.yearGroups?.[year] ?? [];
     const showTerms = year === 1 && dept.terms;
@@ -526,10 +529,10 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
                         : <Reveal stagger className="azu-spec-grid">
                             {specs.map(s => <div key={s} className="azu-spec" dir="rtl"><Icon name="spark" size={16} /> {s}</div>)}
                         </Reveal>}
-                    <p className="azu-note">محتوى كل تخصص — المواد، الجداول، والمصادر — بيتجهز للنسخة الجاية.</p>
+                    <p className="azu-note">محتوى كل تخصص — قريبًا.</p>
                 </>}
                 {specs.length === 0 && !showTerms && tracks.length === 0 && groups.length === 0 && notes.length === 0 &&
-                    <div className="azu-empty"><Icon name="books" size={30} /><p>مفيش تقسيمات في {YEAR_NAMES[year]} — مواد السنة وجداولها هتظهر هنا أول ما تجهز.</p></div>}
+                    <div className="azu-empty"><Icon name="books" size={30} /><p>مواد {YEAR_NAMES[year]} — قريبًا.</p></div>}
             </>}
     </section>;
 }
@@ -548,7 +551,7 @@ function ToolsHub() {
         <Crumb items={[{ label: 'Home', to: '/' }, { label: 'Tools' }]} />
         <div className="azu-kicker">STUDENT TOOLS</div>
         <h2 className="azu-title">أدوات الطالب</h2>
-        <p className="azu-lead">خدمات ذكية تساعدك في رحلتك الدراسية — ولسه فيه أدوات جاية حسب خارطة طريق المنصة.</p>
+        <p className="azu-lead">خدمات ذكية تساعدك في رحلتك الدراسية.</p>
         <Reveal stagger className="azu-prog-grid">
             {ready.map(t => <Link key={t.to} to={t.to} className="azu-prog">
                 <span className="azu-prog-icon"><Icon name={t.icon} size={22} /></span>
@@ -562,7 +565,7 @@ function ToolsHub() {
         </Reveal>
         <div className="azu-notice">
             <span className="azu-tag">قريبًا</span>
-            <p>حسب خارطة الطريق: {soon.join(' · ')} — الأدوات دي محتاجة بيانات الكليات (المواعيد والمقررات) وهتتضاف أول ما تكتمل.</p>
+            <p>{soon.join(' · ')}</p>
         </div>
     </section>;
 }
@@ -786,7 +789,7 @@ export function App() {
         <Route key={`${f.id}-basic`} path={`/academic/${f.id}/basic`} element={<BasicDepartments faculty={f} />} />,
         <Route key={`${f.id}-special`} path={`/academic/${f.id}/special`} element={<SpecialPrograms faculty={f} />} />,
         ...PROGRAMS.map(p => <Route key={`${f.id}-special-${p.id}`} path={`/academic/${f.id}/special/${p.id}`} element={<ProgramPage faculty={f} program={p} />} />),
-        ...DEPARTMENTS.flatMap(d => [
+        ...deptsFor(f.id).flatMap(d => [
             <Route key={`${f.id}-${d.id}`} path={`/academic/${f.id}/basic/${d.id}`} element={<DepartmentPage faculty={f} dept={d} />} />,
             ...[1, 2, 3, 4].map(y => <Route key={`${f.id}-${d.id}-${y}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}`} element={<YearPage faculty={f} dept={d} year={y} />} />),
         ]),
@@ -803,15 +806,15 @@ export function App() {
                 <Route path="/tools/calculator" element={<Calculator />} />
                 <Route path="/tools/software" element={<SoftwareHub />} />
                 {SOFTWARE.map(s => <Route key={s.id} path={`/tools/software/${s.id}`} element={<SoftwarePage soft={s} />} />)}
-                <Route path="/research" element={<SimplePage kicker="RESEARCH" title="Research" icon="microscope"><p>فرص البحث والمشاريع العلمية والمصادر لكل الأقسام — القسم ده بيتجهز للنسخة الجاية.</p></SimplePage>} />
-                <Route path="/opportunities" element={<SimplePage kicker="OPPORTUNITIES" title="Opportunities" icon="briefcase"><p>التدريبات والمنح والمسابقات والفعاليات العلمية — أول ما الفرص تتجمّع هتظهر هنا.</p></SimplePage>} />
+                <Route path="/research" element={<SimplePage kicker="RESEARCH" title="Research" icon="microscope"><p>قريبًا.</p></SimplePage>} />
+                <Route path="/opportunities" element={<SimplePage kicker="OPPORTUNITIES" title="Opportunities" icon="briefcase"><p>قريبًا.</p></SimplePage>} />
                 <Route path="/news" element={<section className="azu-section azu-flow">
                     <Crumb items={[{ label: 'Home', to: '/' }, { label: 'News' }]} />
                     <div className="azu-kicker">LATEST UPDATES</div>
                     <h2 className="azu-title">News &amp; Announcements</h2>
                     <Reveal stagger className="azu-news-grid">
                         {NEWS.map(n => <article key={n.title} className="azu-news-card">
-                            <PhotoSlot label="صورة الخبر — بتجهز" ratio="16 / 9" />
+                            <PhotoSlot label="صورة الخبر — قريبًا" ratio="16 / 9" />
                             <div className="azu-news-body">
                                 <div className="azu-news-meta"><span className="azu-chip">{n.chip}</span><span className="azu-news-date">{n.date}</span></div>
                                 <div className="azu-news-title">{n.title}</div>
@@ -819,11 +822,11 @@ export function App() {
                             </div>
                         </article>)}
                     </Reveal>
-                    <p className="azu-note">الأخبار دي محتوى تجريبي للنسخة الأولى — الإدارة هتنشر الأخبار الحقيقية من لوحة التحكم.</p>
+                    <p className="azu-note">تابع آخر الأخبار والإعلانات.</p>
                 </section>} />
-                <Route path="/community" element={<SimplePage kicker="COMMUNITY" title="Community" icon="users"><p>مجتمع الطلبة: مجموعات كل قسم وفرقة، مناقشات، وتبادل مصادر — بيتجهز.</p></SimplePage>} />
-                <Route path="/about" element={<SimplePage kicker="ABOUT US" title="Built by Students. For Students." icon="users"><p>AZU Science منصة طلابية اتعملت عشان تسهّل الحياة الأكاديمية في كليات العلوم بجامعة الأزهر — فريق العمل وصورهم هيظهروا هنا قريب.</p></SimplePage>} />
-                <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>تسجيل الدخول ولوحة التحكم لسه بيتبنيوا. الأدمن هيدخل بإيميل وكلمة سر عشان يضيف ويعدّل الأخبار والمواد والإعلانات من غير كود.</p></SimplePage>} />
+                <Route path="/community" element={<SimplePage kicker="COMMUNITY" title="Community" icon="users"><p>قريبًا.</p></SimplePage>} />
+                <Route path="/about" element={<SimplePage kicker="ABOUT US" title="Built by Students. For Students." icon="users"><p>AZU Science منصة طلابية اتعملت عشان تسهّل الحياة الأكاديمية في كليات العلوم بجامعة الأزهر.</p></SimplePage>} />
+                <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>قريبًا.</p></SimplePage>} />
             </Routes>
             <Footer />
         </div>

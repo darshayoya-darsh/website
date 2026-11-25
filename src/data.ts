@@ -6,6 +6,7 @@ export type Term = { title: string; courses: { name: string; note?: string }[] }
 export type ListSection = { title: string; items: string[] };
 export type Dept = {
     id: string; ar: string; en: string; icon: string; provisional?: boolean;
+    onlyFaculties?: string[];
     years: Record<number, string[]>;
     intro?: string; importantNote?: string;
     yearNotes?: Record<number, string[]>;
@@ -115,6 +116,7 @@ export const DEPARTMENTS: Dept[] = [
     },
     {
         id: 'geology', ar: 'جيولوجيا', en: 'Geology', icon: 'rock',
+        onlyFaculties: ['boys-cairo'],
         years: { 1: [], 2: GEO_SPEC, 3: GEO_SPEC, 4: GEO_SPEC },
         intro: 'قسم الجيولوجيا هو تخصص علوم الأرض: بيدرس كل ما يتعلق بالأرض والجبال والبحار والمحيطات وتاريخها، وبيهتم بالتحري عن أهم الموارد الطبيعية مثل النفط والمعادن والمياه والصخور والحفريات.',
         yearNotes: { 2: ['يبدأ التشعيب من الفرقة الثانية: شعب قسم الجيولوجيا، أو جيولوجيا - كيمياء (دبل كورس).'] },
