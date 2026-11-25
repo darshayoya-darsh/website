@@ -73,6 +73,38 @@ function Icon({ name, size = 24 }: { name: string; size?: number }) {
     }
 }
 
+/* ---------- Viewport sync (works inside the File viewer iframe) ----------
+   The viewer embeds the app full-height and scrolls the parent page, so
+   window.scrollY inside the app never changes. The shell posts the real
+   viewport rect as a message; we also listen to window scroll for the
+   directly-opened case. Both feed `vp` and fire 'azu-vp'. */
+const vp = { top: 0, height: 900 };
+if (typeof window !== 'undefined') {
+    window.addEventListener('message', (e) => {
+        const d = e.data as { source?: string; type?: string; value?: { top?: number; height?: number } };
+        if (d && d.source === 'instinct-shell' && d.type === 'modal-viewport' && d.value) {
+            vp.top = (d.value.top || 0) + 24;
+            vp.height = d.value.height || 900;
+            window.dispatchEvent(new CustomEvent('azu-vp'));
+        }
+    });
+    window.addEventListener('scroll', () => {
+        vp.top = window.scrollY;
+        vp.height = window.innerHeight;
+        window.dispatchEvent(new CustomEvent('azu-vp'));
+    }, { passive: true });
+}
+function onVp(cb: () => void) {
+    const h = () => cb();
+    window.addEventListener('azu-vp', h);
+    cb();
+    return () => window.removeEventListener('azu-vp', h);
+}
+function inView(el: HTMLElement, lead = 0.92) {
+    const r = el.getBoundingClientRect();
+    return r.top < vp.top + vp.height * lead && r.bottom > vp.top - 60;
+}
+
 /* ---------- Scroll reveal ---------- */
 
 function Reveal({ className = '', stagger = false, children }: { className?: string; stagger?: boolean; children: React.ReactNode }) {
@@ -80,22 +112,57 @@ function Reveal({ className = '', stagger = false, children }: { className?: str
     React.useEffect(() => {
         const el = ref.current;
         if (!el) return;
-        const io = new IntersectionObserver((entries) => {
-            entries.forEach((e) => {
-                if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
-            });
-        }, { threshold: 0.1 });
-        io.observe(el);
-        const fallback = window.setTimeout(() => el.classList.add('is-in'), 900);
-        return () => { io.disconnect(); window.clearTimeout(fallback); };
+        const show = () => el.classList.add('is-in');
+        const off = onVp(() => { if (inView(el)) show(); });
+        const fallback = window.setTimeout(show, 8000);
+        return () => { off(); window.clearTimeout(fallback); };
     }, []);
     return <div ref={ref} className={`azu-reveal${stagger ? ' azu-stagger' : ''}${className ? ' ' + className : ''}`}>{children}</div>;
+}
+
+/* ---------- Count-up stat ---------- */
+
+function CountUp({ value }: { value: string }) {
+    const ref = React.useRef<HTMLSpanElement>(null);
+    React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const m = value.match(/^([\d,]+)(.*)$/);
+        if (!m) { el.textContent = value; return; }
+        const target = parseInt(m[1].replace(/,/g, ''), 10);
+        const suffix = m[2] || '';
+        const fmt = (n: number) => n.toLocaleString('en-US') + suffix;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = fmt(target); return; }
+        let started = false;
+        const start = () => {
+            if (started) return;
+            started = true;
+            const t0 = performance.now();
+            const dur = 1600;
+            const tick = (t: number) => {
+                const pr = Math.min((t - t0) / dur, 1);
+                const eased = 1 - Math.pow(1 - pr, 3);
+                el.textContent = fmt(Math.round(target * eased));
+                if (pr < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+        };
+        el.textContent = fmt(0);
+        const off = onVp(() => { if (inView(el, 0.85)) start(); });
+        const fallback = window.setTimeout(() => { if (!started) { started = true; el.textContent = fmt(target); } }, 8000);
+        return () => { off(); window.clearTimeout(fallback); };
+    }, [value]);
+    return <span ref={ref}>{value}</span>;
 }
 
 /* ---------- Building blocks ---------- */
 
 function TopBar() {
-    return <header className="azu-topbar">
+    const [scrolled, setScrolled] = React.useState(false);
+    React.useEffect(() => {
+        return onVp(() => setScrolled(vp.top > 40));
+    }, []);
+    return <header className={`azu-topbar${scrolled ? ' is-scrolled' : ''}`}>
         <Link to="/" className="azu-brand">
             <img src={logoImg} alt="AZU Science logo" className="azu-brand-logo" />
             <span className="azu-brand-text">
@@ -186,9 +253,27 @@ const CATEGORIES = [
 ];
 
 function Home() {
+    const bgRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        const el = bgRef.current;
+        if (!el) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        let raf = 0;
+        return onVp(() => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+                const y = vp.top;
+                if (y > 820) return;
+                if (y > 8) {
+                    el.style.animation = 'none';
+                    el.style.transform = `scale(1.07) translate3d(0, ${Math.min(y * 0.22, 170)}px, 0)`;
+                }
+            });
+        });
+    }, []);
     return <>
         <section className="azu-hero">
-            <div className="azu-hero-bg" style={{ backgroundImage: `url(${heroPhoto})` }} aria-hidden="true" />
+            <div className="azu-hero-bg" ref={bgRef} style={{ backgroundImage: `url(${heroPhoto})` }} aria-hidden="true" />
             <div className="azu-hero-inner">
                 <div className="azu-eyebrow">AL-AZHAR UNIVERSITY</div>
                 <h1 className="azu-hero-title">AZU <span>Science</span></h1>
@@ -226,7 +311,7 @@ function Home() {
         <Reveal stagger className="azu-stats">
             {STATS.map(s => <div key={s.label} className="azu-stat">
                 <Icon name={s.icon} size={26} />
-                <div className="azu-stat-value">{s.value}</div>
+                <div className="azu-stat-value"><CountUp value={s.value} /></div>
                 <div className="azu-stat-label">{s.label}</div>
             </div>)}
         </Reveal>

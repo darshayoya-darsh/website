@@ -61,45 +61,28 @@ export default {
         }
 
         let body;
-        try { body = await request.json(); } catch { return json({ error: 'bad request' }, 400); }
-        const msgs = Array.isArray(body?.messages) ? body.messages.slice(-MAX_MESSAGES) : [];
-        const valid = msgs.filter(
-            (m) => m && (m.role === 'user' || m.role === 'assistant') &&
-                typeof m.text === 'string' && m.text.trim().length > 0
-        ).map((m) => ({ role: m.role, text: m.text.slice(0, MAX_CHARS) }));
-        if (valid.length === 0 || valid[valid.length - 1].role !== 'user') {
-            return json({ error: 'bad request' }, 400);
+        const models = (env.MODELS || 'gemini-3.1-flash-lite,gemini-flash-latest,gemini-2.5-flash').split(',');
+        for (const model of models) {
+            try {
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model.trim()}:generateContent`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+                        body: JSON.stringify(payload),
+                    }
+                );
+                if (!res.ok) continue;
+                const data = await res.json();
+                const text = (data.candidates?.[0]?.content?.parts || [])
+                    .map((p) => p.text || '').join('').trim();
+                if (!text || /high demand|try again later/i.test(text)) continue;
+                return json({ text, sources: [] });
+            } catch { /* try next model */ }
         }
-
-        const payload = {
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: valid.map((m) => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.text }],
-            })),
-            generationConfig: { temperature: 0.4, maxOutputTokens: 800 },
-        };
-
-        try {
-            const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${env.MODEL || 'gemini-2.0-flash'}:generateContent`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-                    body: JSON.stringify(payload),
-                }
-            );
-            if (!res.ok) throw new Error(`gemini ${res.status}`);
-            const data = await res.json();
-            const text = (data.candidates?.[0]?.content?.parts || [])
-                .map((p) => p.text || '').join('').trim();
-            if (!text) throw new Error('empty');
-            return json({ text, sources: [] });
-        } catch {
-            return json({
-                text: 'المساعد غير متاح الآن بسبب مشكلة تقنية. جرّب مرة أخرى لاحقًا.',
-                sources: [],
-            }, 200);
-        }
+        return json({
+            text: 'المساعد غير متاح الآن بسبب الضغط على الخدمة. جرّب مرة أخرى بعد قليل.',
+            sources: [],
+        }, 200);
     },
 };
