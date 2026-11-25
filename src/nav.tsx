@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, NavLink } from '@instinct/files';
 import { Icon } from './Icon';
 import { searchAll, SEARCH_GROUP_ORDER } from './search';
+import { useAuth } from './auth';
 
 /* Native <dialog> modals: they live in the browser top layer, so they stay
    pinned to the screen even inside the full-height File viewer iframe. */
@@ -34,6 +35,13 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean }[] = [
     { to: '/about', label: 'About' },
 ];
 
+export function SignInLink({ className = 'azu-signin', onNavigate }: { className?: string; onNavigate?: () => void }) {
+    const session = useAuth();
+    return <Link to="/signin" className={className} onClick={onNavigate}>
+        <Icon name="user" size={16} /> <span className="azu-signin-label">{session ? (session.user.fullName || 'حسابي') : 'Sign In'}</span>
+    </Link>;
+}
+
 export function TopNavLinks({ onNavigate }: { onNavigate?: () => void }) {
     return <>{NAV_ITEMS.map(n => <NavLink key={n.to} to={n.to} end={n.end} onClick={onNavigate}>{n.label}</NavLink>)}</>;
 }
@@ -53,7 +61,7 @@ export function MobileNav({ onClose }: { onClose: () => void }) {
             <Link to="/contact" onClick={onClose}>Contact Us</Link>
             <Link to="/report" onClick={onClose}>Report an Issue</Link>
         </div>
-        <Link to="/signin" className="azu-signin azu-drawer-signin" onClick={onClose}><Icon name="user" size={16} /> Sign In</Link>
+        <SignInLink className="azu-signin azu-drawer-signin" onNavigate={onClose} />
     </dialog>;
 }
 

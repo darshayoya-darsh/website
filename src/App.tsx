@@ -10,8 +10,9 @@ import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, GRADES, gradeFromPercent, grad
 import { BYLAW, COURSE_FILES, RESOURCE_TYPES } from './bylaw';
 import type { BylawTrack } from './bylaw';
 import { AgentChat, AGENT_OPEN_EVENT } from './AgentChat';
+import { AuthPage } from './AuthPage';
 import { Icon } from './Icon';
-import { MobileNav, SearchOverlay, TopNavLinks } from './nav';
+import { MobileNav, SearchOverlay, TopNavLinks, SignInLink } from './nav';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software, Faculty } from './data';
 
 const ASTRO_TRACKS = ['فلك وأرصاد', 'فلك خاص', 'أرصاد خاص'];
@@ -146,7 +147,7 @@ function TopBar() {
                 onClick={() => window.dispatchEvent(new CustomEvent(AGENT_OPEN_EVENT))}>
                 <Icon name="spark" size={16} />
             </button>
-            <Link to="/signin" className="azu-signin"><Icon name="user" size={16} /> <span className="azu-signin-label">Sign In</span></Link>
+            <SignInLink />
         </header>
         {menuOpen && <MobileNav onClose={() => setMenuOpen(false)} />}
         {searchOpen && <SearchOverlay initial={qs.get('search') ?? ''} onClose={() => setSearchOpen(false)} />}
@@ -1041,7 +1042,7 @@ export function App() {
                     </figure>
                     <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالب من طلابها آمن بأن زملاءه يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحمل على عاتقه بناءها وجمع ما يحتاجه الطالب في مكان واحد، لتبقى مبادرة طلابية خالصة: من الطلاب، وإليهم.</p>
                 </section>} />
-                <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>قريبًا.</p></SimplePage>} />
+                <Route path="/signin" element={<AuthPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/contact" element={<MessagePage kind="contact" />} />
                 <Route path="/report" element={<MessagePage kind="report" />} />

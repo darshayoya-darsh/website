@@ -999,3 +999,18 @@ dialog.azu-searchdlg::backdrop { background: rgba(8,40,36,.55); }
     .azu-signin { padding: 9px 11px; }
     .azu-drawer-signin .azu-signin-label { display: inline; }
 }
+
+/* ---------- Auth page ---------- */
+.azu-auth-card { max-width: 480px; background: #faf6ec; border: 1px solid #e3dbc9; border-radius: 16px; padding: 22px; }
+.azu-auth-tabs { display: flex; gap: 6px; background: #efe7d4; border-radius: 999px; padding: 4px; margin-bottom: 6px; }
+.azu-auth-tab { flex: 1; border: none; background: transparent; border-radius: 999px; padding: 9px 12px; font: inherit; font-size: 14px; font-weight: 700; color: #4a5752; cursor: pointer; transition: background .15s, color .15s; }
+.azu-auth-tab.is-on { background: #0c3a34; color: #f5f0e6; }
+.azu-auth-err { background: #fbeaea; border: 1px solid #eec9c9; color: #8c2f2f; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; font-weight: 600; }
+.azu-auth-note { font-size: 14px; color: #4a5752; line-height: 1.8; margin: 4px 0 14px; }
+.azu-auth-fine { font-size: 12px; color: #8a938f; margin-top: 14px; }
+.azu-auth-user { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.azu-auth-avatar { width: 44px; height: 44px; border-radius: 50%; background: #0c3a34; color: #c9a24b; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.azu-auth-name { font-size: 16px; font-weight: 800; color: #0c3a34; }
+.azu-auth-mail { font-size: 12.5px; color: #8a938f; direction: ltr; text-align: right; }
+.azu-auth-back { font-size: 13.5px; }
+.azu-auth-back a { color: #177a68; font-weight: 700; }
