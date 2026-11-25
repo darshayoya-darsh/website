@@ -21,15 +21,20 @@
 @keyframes azu-breathe { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
 @keyframes azu-hero-bg { from { transform: scale(1.08) translate(1.4%, -1.4%); } to { transform: scale(1) translate(0, 0); } }
 
-.azu-reveal { opacity: 0; transform: scale(1.035); transition: opacity .65s ease, transform .65s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+/* Scroll reveal: pieces slide in from the sides and assemble in place.
+   Calm single easing, no scale, no bounce; the intro blur stays hero-only. */
+.azu-reveal { opacity: 0; transform: translateX(-48px); transition: opacity .7s ease, transform .9s cubic-bezier(.16,.84,.3,1); will-change: opacity, transform; }
 .azu-reveal.is-in { opacity: 1; transform: none; }
-.azu-stagger > * { opacity: 0; transform: scale(1.025); transition: opacity .5s ease, transform .5s cubic-bezier(.22,.61,.36,1); }
+.azu-stagger > * { opacity: 0; transform: translateX(40px) translateY(4px); transition: opacity .6s ease, transform .8s cubic-bezier(.16,.84,.3,1); }
+.azu-stagger > *:nth-child(even) { transform: translateX(-40px) translateY(4px); }
 .azu-stagger.is-in > * { opacity: 1; transform: none; }
-.azu-stagger.is-in > *:nth-child(2) { transition-delay: .08s; }
-.azu-stagger.is-in > *:nth-child(3) { transition-delay: .16s; }
-.azu-stagger.is-in > *:nth-child(4) { transition-delay: .24s; }
-.azu-stagger.is-in > *:nth-child(5) { transition-delay: .32s; }
-.azu-stagger.is-in > *:nth-child(6) { transition-delay: .40s; }
+.azu-stagger.is-in > *:nth-child(2) { transition-delay: .1s; }
+.azu-stagger.is-in > *:nth-child(3) { transition-delay: .2s; }
+.azu-stagger.is-in > *:nth-child(4) { transition-delay: .3s; }
+.azu-stagger.is-in > *:nth-child(5) { transition-delay: .4s; }
+.azu-stagger.is-in > *:nth-child(6) { transition-delay: .5s; }
+.azu-stagger.is-in > *:nth-child(7) { transition-delay: .6s; }
+.azu-stagger.is-in > *:nth-child(8) { transition-delay: .7s; }
 
 @media (prefers-reduced-motion: reduce) {
     .azu-reveal, .azu-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; filter: none !important; }
