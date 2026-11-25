@@ -820,3 +820,38 @@ a.azu-agent-src:hover { border-color: #c9a24b; }
     .azu-agent { animation: none !important; }
     .azu-agent-typing span { animation: none !important; }
 }
+
+/* ===== Institutional motion pass (Humboldt-Universitaet zu Berlin style) =====
+   Studied hu-berlin.de: no scroll reveals, no parallax, no bouncing hero.
+   Content fades in once (0.3s ease-in-out); hovers answer with color,
+   border and shadow only; arrows nudge 4px; nothing lifts, spins or drifts. */
+@keyframes azu-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* content is simply there — no scroll bloom, no stagger */
+.azu-reveal, .azu-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; will-change: auto; }
+
+/* hero: single calm fade on load, no drift, no blur, no stagger */
+.azu-hero-bg { animation: azu-fade .3s ease-in-out both !important; }
+.azu-hero-inner > * { animation: azu-fade .3s ease-in-out both !important; }
+.azu-hero-quote { animation: azu-fade .3s ease-in-out .1s both !important; }
+.azu-scroll svg { animation: none !important; }
+
+/* page-change: quick institutional fade on every route */
+.azu-flow { animation: azu-fade .3s ease-in-out both; }
+
+/* hovers: surfaces respond with shadow, border and color — nothing lifts */
+.azu-signin:hover, .azu-btn-primary:hover, .azu-btn-ghost:hover, .azu-btn-outline:hover,
+.azu-card:hover, .azu-news-card:hover, .azu-faculty-card:hover, .azu-choice:hover,
+.azu-dept:hover, .azu-year:hover, .azu-spec:hover, .azu-chip2:hover, .azu-speccard:hover,
+.azu-track:hover, .azu-career:hover, .azu-prog:hover, .azu-progstat:hover,
+.azu-compare-card:hover, .azu-tab:hover, .azu-filter:hover, .azu-stat:hover,
+.azu-calc-card .azu-btn-ghost:hover { transform: none; }
+.azu-card:active, .azu-faculty-card:active, .azu-choice:active, .azu-year:active { transform: none; }
+.azu-card:hover .azu-card-icon, .azu-faculty-card:hover .azu-faculty-icon,
+.azu-choice:hover .azu-choice-icon, .azu-dept:hover .azu-dept-icon,
+.azu-prog:hover .azu-prog-icon { transform: scale(1.05); }
+.azu-card:hover .azu-card-water { transform: none; }
+.azu-year:hover .azu-year-num { transform: none; }
+.azu-brand:hover .azu-brand-logo { transform: none; }
+.azu-footer-col a:hover { transform: none; }
+.azu-calc-del:hover { transform: none; }
