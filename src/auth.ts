@@ -49,7 +49,9 @@ async function api(path: string, body?: Record<string, unknown>, token?: string)
     if (!r.ok) {
         const code = (data.error_code || data.error || '') as string;
         const msg = (data.error_description || data.msg || data.message || '') as string;
-        throw new Error(arError(code, msg));
+        const err = new Error(arError(code, msg)) as Error & { code?: string };
+        err.code = code || msg;
+        throw err;
     }
     return data;
 }
@@ -106,3 +108,9 @@ export async function refreshSession(): Promise<void> {
 }
 
 export function signOut() { setSession(null); }
+
+/* Resend the signup confirmation email (current account model keeps email
+   confirmation until the reference-list model is decided). */
+export async function resendConfirmation(email: string): Promise<void> {
+    await api('/auth/v1/resend', { type: 'signup', email });
+}

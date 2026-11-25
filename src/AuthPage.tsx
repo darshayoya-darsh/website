@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
-import { useAuth, signIn, signUp, signOut } from './auth';
+import { useAuth, signIn, signUp, signOut, resendConfirmation } from './auth';
 
 /* Student sign-in / sign-up page (replaces the قريبًا placeholder at /signin). */
 
@@ -14,6 +14,8 @@ export function AuthPage() {
     const [pw2, setPw2] = React.useState('');
     const [busy, setBusy] = React.useState(false);
     const [err, setErr] = React.useState('');
+    const [unconfirmed, setUnconfirmed] = React.useState(false);
+    const [resent, setResent] = React.useState(false);
     const [confirmSent, setConfirmSent] = React.useState(false);
 
     if (session) {
@@ -62,7 +64,10 @@ export function AuthPage() {
                 if (r === 'confirm') setConfirmSent(true);
             }
         } catch (ex) {
-            setErr(ex instanceof Error ? ex.message : 'حدث خطأ غير متوقع. أعد المحاولة.');
+            const e = ex as Error & { code?: string };
+            setErr(e instanceof Error ? e.message : 'حدث خطأ غير متوقع. أعد المحاولة.');
+            setUnconfirmed((e.code || '').includes('email_not_confirmed'));
+            setResent(false);
         } finally { setBusy(false); }
     };
 
@@ -88,6 +93,11 @@ export function AuthPage() {
                     <input className="azu-input" type="password" autoComplete="new-password" dir="ltr" value={pw2} onChange={(e) => setPw2(e.target.value)} required minLength={6} />
                 </label>}
                 {err && <div className="azu-auth-err" role="alert">{err}</div>}
+                {unconfirmed && !resent && <button type="button" className="azu-btn azu-btn-outline" disabled={busy}
+                    onClick={async () => { setBusy(true); try { await resendConfirmation(email.trim()); setResent(true); } catch { setErr('تعذر الإرسال الآن؛ أعد المحاولة بعد قليل.'); } finally { setBusy(false); } }}>
+                    إعادة إرسال بريد التأكيد
+                </button>}
+                {unconfirmed && resent && <p className="azu-auth-note">تم إرسال بريد التأكيد مرة أخرى إلى <bdi>{email}</bdi>. افتحه واضغط الرابط ثم سجّل دخولك.</p>}
                 <button type="submit" className="azu-btn azu-btn-primary" disabled={busy}>
                     {busy ? 'لحظات…' : mode === 'in' ? 'تسجيل الدخول' : 'إنشاء الحساب'}
                 </button>
