@@ -832,7 +832,7 @@ export function App() {
                             <div className="azu-about-names">مصطفى محمود<br />الفرقة الثانية فيزياء ورياضيات</div>
                         </figcaption>
                     </figure>
-                    <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالبين آمنوا بأن زملاءهم يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحملا على عاتقهما بناءها وجمع ما يحتاجه الطالب في مكان واحد، ليكون عملًا طلابيًا خالصًا: من الطلاب، وإليهم.</p>
+                    <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالب من طلابها آمن بأن زملاءه يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحمل على عاتقه بناءها وجمع ما يحتاجه الطالب في مكان واحد، لتبقى مبادرة طلابية خالصة: من الطلاب، وإليهم.</p>
                 </section>} />
                 <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>قريبًا.</p></SimplePage>} />
             </Routes>
