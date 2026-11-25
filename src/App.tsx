@@ -1134,7 +1134,7 @@ export function App() {
                         <img src={aboutPhoto} alt="مصطفى محمود، مؤسس منصة AZU Science" loading="lazy" />
                         <figcaption dir="rtl">
                             <div className="azu-about-founders">مؤسس المنصة</div>
-                            <div className="azu-about-names">مصطفى محمود<br />الفرقة الثانية فيزياء ورياضيات</div>
+                            <div className="azu-about-names">مصطفى محمود<br />فيزياء ورياضيات</div>
                         </figcaption>
                     </figure>
                     <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالب من طلابها آمن بأن زملاءه يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحمل على عاتقه بناءها وجمع ما يحتاجه الطالب في مكان واحد، لتبقى مبادرة طلابية خالصة: من الطلاب، وإليهم.</p>
