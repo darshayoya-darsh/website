@@ -6,6 +6,7 @@ import React from 'react';
 const SUPA_URL = 'https://nhufspxzwbtvmamukpoa.supabase.co';
 const SUPA_KEY = 'sb_publishable_Q0OuPQHYGAb271d0jkxIBw_6yMueXMk';
 const LS_KEY = 'azu_auth_v1';
+const HAS_ACCOUNT_KEY = 'azu_has_account';
 
 export interface AuthUser { id: string; email: string; fullName: string; role: string; }
 export interface AuthSession { access_token: string; refresh_token: string; user: AuthUser; }
@@ -21,10 +22,16 @@ function emit() { listeners.forEach((l) => l()); }
 function setSession(s: AuthSession | null) {
     session = s;
     try {
-        if (s) localStorage.setItem(LS_KEY, JSON.stringify(s));
-        else localStorage.removeItem(LS_KEY);
+        if (s) {
+            localStorage.setItem(LS_KEY, JSON.stringify(s));
+            localStorage.setItem(HAS_ACCOUNT_KEY, '1');
+        } else localStorage.removeItem(LS_KEY);
     } catch { /* private mode */ }
     emit();
+}
+
+export function hasAccountFlag(): boolean {
+    try { return !!localStorage.getItem(HAS_ACCOUNT_KEY); } catch { return false; }
 }
 
 export function useAuth(): AuthSession | null {

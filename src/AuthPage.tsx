@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
-import { useAuth, signIn, signUp, signOut, resendConfirmation } from './auth';
+import { useAuth, signIn, signUp, signOut, resendConfirmation, hasAccountFlag } from './auth';
 
 /* Student sign-in / sign-up page (replaces the قريبًا placeholder at /signin). */
 
 export function AuthPage() {
     const session = useAuth();
-    const [mode, setMode] = React.useState<'in' | 'up'>('in');
+    // First-time visitors land on "حساب جديد"; anyone who has an account lands on "دخول".
+    const [mode, setMode] = React.useState<'in' | 'up'>(() => hasAccountFlag() ? 'in' : 'up');
     const [name, setName] = React.useState('');
     const [email, setEmail] = React.useState('');
     const [pw, setPw] = React.useState('');
