@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
 import { useAuth, signIn, signUp, signOut, resendConfirmation, hasAccountFlag, uploadAvatar, removeAvatar } from './auth';
+import { myGrants } from './admin';
 import { Avatar, downscaleAvatar } from './Avatar';
 
 /* Student sign-in / sign-up page (replaces the قريبًا placeholder at /signin). */
@@ -50,6 +51,21 @@ function AvatarEditor() {
     </div>;
 }
 
+/* Scoped admins carry role 'student' plus a grant row; check lazily so the
+   portal link appears for both scoped and super admins. */
+function AdminLink() {
+    const session = useAuth();
+    const [isAdmin, setIsAdmin] = React.useState(session?.user.role === 'admin');
+    React.useEffect(() => {
+        if (session?.user.role === 'admin') { setIsAdmin(true); return; }
+        let live = true;
+        myGrants().then((g) => { if (live && g.length > 0) setIsAdmin(true); }).catch(() => {});
+        return () => { live = false; };
+    }, [session]);
+    if (!isAdmin) return null;
+    return <p><Link to="/admin" className="azu-btn azu-btn-primary"><Icon name="shield" size={15} /> لوحة المشرفين</Link></p>;
+}
+
 export function AuthPage() {
     const session = useAuth();
     // First-time visitors land on "حساب جديد"; anyone who has an account lands on "دخول".
@@ -77,6 +93,7 @@ export function AuthPage() {
                     </div>
                     {session.user.role === 'admin' && <span className="azu-tag">مشرف</span>}
                 </div>
+                <AdminLink />
                 <p className="azu-auth-note">الملفات والمذكرات المشتركة وخدمات الحساب ستظهر هنا مع إضافتها.</p>
                 <button type="button" className="azu-btn azu-btn-outline" onClick={() => signOut()}>تسجيل الخروج</button>
             </div>

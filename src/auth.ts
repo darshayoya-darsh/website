@@ -3,8 +3,8 @@ import React from 'react';
 /* Supabase auth via plain REST (no SDK): the publishable key is public by
    design; all reads/writes are gated by Row Level Security server-side. */
 
-const SUPA_URL = 'https://nhufspxzwbtvmamukpoa.supabase.co';
-const SUPA_KEY = 'sb_publishable_Q0OuPQHYGAb271d0jkxIBw_6yMueXMk';
+export const SUPA_URL = 'https://nhufspxzwbtvmamukpoa.supabase.co';
+export const SUPA_KEY = 'sb_publishable_Q0OuPQHYGAb271d0jkxIBw_6yMueXMk';
 const LS_KEY = 'azu_auth_v1';
 const HAS_ACCOUNT_KEY = 'azu_has_account';
 
