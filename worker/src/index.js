@@ -380,6 +380,48 @@ async function handleFileUrl(request, env, url) {
     return json({ url: `${a.downloadUrl}/file/${env.B2_BUCKET_NAME}/${name}?Authorization=${encodeURIComponent(auth.authorizationToken)}` });
 }
 
+/* ---------- Contact/report forms -> email via Brevo ----------
+   The browser cannot send mail and Workers cannot open SMTP sockets, so the
+   form posts here and the Worker calls Brevo's HTTP API. BREVO_API_KEY is a
+   wrangler secret; until it exists the endpoint answers 503 and the frontend
+   falls back to the visitor's mail app. */
+const CONTACT_DEST = 'darsh.nassar.cr7@gmail.com';
+
+async function handleMessage(request, env) {
+    if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+    if (!env.BREVO_API_KEY) return json({ error: 'خدمة الرسائل غير مفعّلة بعد.' }, 503);
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (await rateHit(env, `msg:${ip}`, 10, 3_600_000)) {
+        return json({ error: 'عدد الرسائل كبير الآن. جرّب بعد قليل.' }, 429);
+    }
+    let body;
+    try { body = await request.json(); } catch { return json({ error: 'طلب غير صالح.' }, 400); }
+    const kind = body?.kind === 'report' ? 'report' : 'contact';
+    const name = cleanText(body?.name, 100);
+    const from = cleanText(body?.from, 150);
+    const message = cleanText(body?.message, 4000);
+    const page = cleanText(body?.page, 300);
+    if (!name || !message) return json({ error: 'اكتب اسمك ورسالتك.' }, 400);
+    if (from && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(from)) return json({ error: 'البريد الإلكتروني غير صالح.' }, 400);
+
+    const subject = kind === 'report' ? 'بلاغ عن مشكلة — AZU Science' : 'رسالة من منصة AZU Science';
+    const lines = [`الاسم: ${name}`, `البريد: ${from || 'غير مذكور'}`, '', message];
+    if (kind === 'report' && page) lines.push('', `الصفحة: ${page}`);
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+            sender: { name: 'AZU Science', email: CONTACT_DEST },
+            to: [{ email: CONTACT_DEST }],
+            replyTo: from ? { email: from, name } : undefined,
+            subject,
+            textContent: lines.join('\n'),
+        }),
+    });
+    if (!res.ok) return json({ error: 'تعذر إرسال الرسالة. أعد المحاولة.' }, 502);
+    return json({ ok: true });
+}
+
 /* ---------- AI agent (existing) ---------- */
 
 async function handleAgent(request, env) {
@@ -471,6 +513,7 @@ export default {
             if (url.pathname === '/upload' && request.method === 'POST') return await handleUpload(request, env);
             if (url.pathname === '/delete' && request.method === 'POST') return await handleDelete(request, env);
             if (url.pathname === '/file-url' && request.method === 'GET') return await handleFileUrl(request, env, url);
+            if (url.pathname === '/message') return await handleMessage(request, env);
             if (url.pathname === '/' || url.pathname === '') return await handleAgent(request, env);
         } catch {
             return json({ error: 'خطأ غير متوقع. أعد المحاولة.' }, 500);

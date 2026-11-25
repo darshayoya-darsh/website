@@ -996,14 +996,28 @@ function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
     const [from, setFrom] = React.useState('');
     const [msg, setMsg] = React.useState('');
     const ready = CONTACT_EMAIL !== '';
+    const [state, setState] = React.useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
     /* Click + Enter handlers, never <form> submit: the File viewer iframe
        sandbox blocks form submissions (no allow-forms). */
-    const submit = () => {
-        if (!ready || !name.trim() || !msg.trim()) return;
+    const mailto = () => {
         const subject = isReport ? 'بلاغ عن مشكلة — AZU Science' : 'رسالة من منصة AZU Science';
         const page = isReport ? `\n\nالصفحة: ${window.location.href}` : '';
         const body = `الاسم: ${name}\nالبريد: ${from}\n\n${msg}${page}`;
         window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    };
+    const submit = async () => {
+        if (!ready || !name.trim() || !msg.trim() || state === 'sending') return;
+        setState('sending');
+        try {
+            const r = await fetch('https://azu-science-agent.darshayoya.workers.dev/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kind, name: name.trim(), from: from.trim(), message: msg.trim(), page: isReport ? window.location.href : undefined }),
+            });
+            if (r.status === 503) { setState('idle'); mailto(); return; } // mail not wired yet
+            if (!r.ok) { setState('error'); return; }
+            setState('sent');
+        } catch { setState('error'); }
     };
     const enter = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') submit(); };
     return <section className="azu-section azu-flow">
@@ -1025,8 +1039,10 @@ function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
             <label className="azu-field">{isReport ? 'وصف المشكلة' : 'رسالتك'}
                 <textarea className="azu-input azu-textarea" rows={5} value={msg} onChange={e => setMsg(e.target.value)} disabled={!ready} />
             </label>
+            {state === 'sent' && <p className="azu-note" role="status">وصلت رسالتك، هنرد عليك قريبًا.</p>}
+            {state === 'error' && <p className="azu-note" role="alert">تعذر الإرسال، جرّب مرة أخرى أو راسلنا على البريد مباشرة.</p>}
             {ready
-                ? <button type="button" className="azu-btn azu-btn-primary" onClick={submit} disabled={!name.trim() || !msg.trim()}><Icon name="mail" size={15} /> إرسال</button>
+                ? <button type="button" className="azu-btn azu-btn-primary" onClick={submit} disabled={state === 'sending' || state === 'sent' || !name.trim() || !msg.trim()}><Icon name="mail" size={15} /> {state === 'sending' ? 'جارٍ الإرسال...' : 'إرسال'}</button>
                 : <span className="azu-tag">قريبًا</span>}
         </div>
     </section>;
