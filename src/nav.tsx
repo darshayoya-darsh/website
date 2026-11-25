@@ -3,6 +3,7 @@ import { Link, NavLink } from '@instinct/files';
 import { Icon } from './Icon';
 import { searchAll, SEARCH_GROUP_ORDER } from './search';
 import { useAuth } from './auth';
+import { Avatar } from './Avatar';
 
 /* Native <dialog> modals: they live in the browser top layer, so they stay
    pinned to the screen even inside the full-height File viewer iframe. */
@@ -38,7 +39,7 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean }[] = [
 export function SignInLink({ className = 'azu-signin', onNavigate }: { className?: string; onNavigate?: () => void }) {
     const session = useAuth();
     return <Link to="/signin" className={className} onClick={onNavigate}>
-        <Icon name="user" size={16} /> <span className="azu-signin-label">{session ? (session.user.fullName || 'حسابي') : 'Sign In'}</span>
+        {session ? <Avatar size={22} /> : <Icon name="user" size={16} />} <span className="azu-signin-label">{session ? (session.user.fullName || 'حسابي') : 'Sign In'}</span>
     </Link>;
 }
 

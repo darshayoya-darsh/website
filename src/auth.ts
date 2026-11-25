@@ -8,7 +8,7 @@ const SUPA_KEY = 'sb_publishable_Q0OuPQHYGAb271d0jkxIBw_6yMueXMk';
 const LS_KEY = 'azu_auth_v1';
 const HAS_ACCOUNT_KEY = 'azu_has_account';
 
-export interface AuthUser { id: string; email: string; fullName: string; role: string; }
+export interface AuthUser { id: string; email: string; fullName: string; role: string; avatarPath?: string | null; }
 export interface AuthSession { access_token: string; refresh_token: string; user: AuthUser; }
 
 let session: AuthSession | null = null;
@@ -76,14 +76,16 @@ function arError(code: string, msg: string): string {
 async function loadProfile(access_token: string, user: { id: string; email?: string; user_metadata?: { full_name?: string } }): Promise<AuthUser> {
     let role = 'student';
     let fullName = user?.user_metadata?.full_name || '';
+    let avatarPath: string | null = null;
     try {
-        const rows = await api(`/rest/v1/profiles?id=eq.${user.id}&select=full_name,role`, undefined, access_token);
+        const rows = await api(`/rest/v1/profiles?id=eq.${user.id}&select=full_name,role,avatar_path`, undefined, access_token);
         if (Array.isArray(rows) && rows[0]) {
             role = rows[0].role || 'student';
             fullName = rows[0].full_name || fullName;
+            avatarPath = rows[0].avatar_path || null;
         }
     } catch { /* profile row may lag the signup trigger by a beat */ }
-    return { id: user.id, email: user.email || '', fullName, role };
+    return { id: user.id, email: user.email || '', fullName, role, avatarPath };
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -115,6 +117,65 @@ export async function refreshSession(): Promise<void> {
 }
 
 export function signOut() { setSession(null); }
+
+/* ---------- Profile avatar (Supabase Storage, private bucket) ----------
+   Bucket 'avatars' is private with owner-only RLS: a student can read and
+   write only <their-uid>/ inside it. Reads therefore need the session token;
+   photos are never reachable by link. */
+
+const AVATAR_BUCKET = 'avatars';
+
+export async function uploadAvatar(blob: Blob): Promise<string> {
+    if (!session) throw new Error('سجّل دخولك أولًا.');
+    const path = `${session.user.id}/avatar.webp`;
+    const r = await fetch(`${SUPA_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+        method: 'POST',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'image/webp', 'x-upsert': 'true' },
+        body: blob,
+    });
+    if (!r.ok) throw new Error('تعذر رفع الصورة. أعد المحاولة.');
+    await saveAvatarPath(path);
+    return path;
+}
+
+export async function removeAvatar(): Promise<void> {
+    if (!session || !session.user.avatarPath) return;
+    const path = session.user.avatarPath;
+    await fetch(`${SUPA_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+    }).catch(() => {});
+    await saveAvatarPath(null);
+}
+
+async function saveAvatarPath(path: string | null): Promise<void> {
+    if (!session) return;
+    const r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${session.user.id}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ avatar_path: path }),
+    });
+    if (!r.ok) throw new Error('تعذر حفظ الصورة في الملف الشخصي.');
+    setSession({ ...session, user: { ...session.user, avatarPath: path } });
+}
+
+const avatarCache = new Map<string, string>();
+
+export async function fetchAvatarUrl(path: string): Promise<string | null> {
+    if (!session) return null;
+    const key = `${path}`;
+    const hit = avatarCache.get(key);
+    if (hit) return hit;
+    try {
+        const r = await fetch(`${SUPA_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+            headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!r.ok) return null;
+        const url = URL.createObjectURL(await r.blob());
+        avatarCache.set(key, url);
+        return url;
+    } catch { return null; }
+}
 
 /* Resend the signup confirmation email (current account model keeps email
    confirmation until the reference-list model is decided). */
