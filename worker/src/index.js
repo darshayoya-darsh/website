@@ -1,5 +1,5 @@
 /* AZU Science AI Agent proxy.
-   Owns the Gemini key server-side: the public frontend talks only to this
+   Owns the Groq key server-side: the public frontend talks only to this
    Worker. Adds the system prompt, input limits and simple per-IP rate
    limiting. Response shape matches the frontend HttpProvider:
    { text: string, sources?: { title, url? }[] } */
@@ -61,22 +61,41 @@ export default {
         }
 
         let body;
-        const models = (env.MODELS || 'gemini-3.1-flash-lite,gemini-flash-latest,gemini-2.5-flash').split(',');
+        try {
+            body = await request.json();
+        } catch {
+            return json({ error: 'invalid json' }, 400);
+        }
+
+        const raw = Array.isArray(body?.messages) ? body.messages : [];
+        const history = raw
+            .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.text === 'string')
+            .slice(-MAX_MESSAGES)
+            .map((m) => ({ role: m.role, content: m.text.slice(0, MAX_CHARS) }));
+        if (!history.length || history[history.length - 1].role !== 'user') {
+            return json({ error: 'no user message' }, 400);
+        }
+
+        const models = (env.MODELS || 'openai/gpt-oss-120b,qwen/qwen3.8-27b').split(',');
         for (const model of models) {
             try {
-                const res = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/${model.trim()}:generateContent`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-                        body: JSON.stringify(payload),
-                    }
-                );
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: model.trim(),
+                        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...history],
+                        max_tokens: 800,
+                        temperature: 0.4,
+                    }),
+                });
                 if (!res.ok) continue;
                 const data = await res.json();
-                const text = (data.candidates?.[0]?.content?.parts || [])
-                    .map((p) => p.text || '').join('').trim();
-                if (!text || /high demand|try again later/i.test(text)) continue;
+                const text = (data.choices?.[0]?.message?.content || '').trim();
+                if (!text) continue;
                 return json({ text, sources: [] });
             } catch { /* try next model */ }
         }

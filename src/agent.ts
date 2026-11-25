@@ -37,6 +37,6 @@ class HttpProvider implements AgentProvider {
     }
 }
 
-const AGENT_ENDPOINT = ''; // set this when the backend is live
+const AGENT_ENDPOINT = 'https://azu-science-agent.darshayoya.workers.dev';
 
 export const agentProvider: AgentProvider = AGENT_ENDPOINT ? new HttpProvider(AGENT_ENDPOINT) : new SoonProvider();

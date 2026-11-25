@@ -3,8 +3,8 @@ main = "src/index.js"
 compatibility_date = "2026-11-25"
 workers_dev = true
 
-# Set the model key with: wrangler secret put GEMINI_API_KEY
+# Set the model key with: wrangler secret put GROQ_API_KEY
 # (never commit the key to git)
 
 [vars]
-MODELS = "gemini-3.1-flash-lite,gemini-flash-latest,gemini-2.5-flash"
+MODELS = "openai/gpt-oss-120b,qwen/qwen3.8-27b"
