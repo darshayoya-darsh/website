@@ -26,14 +26,28 @@ class HttpProvider implements AgentProvider {
     name = 'http';
     constructor(private endpoint: string) {}
     async send(history: AgentMessage[], signal?: AbortSignal): Promise<AgentReply> {
-        const res = await fetch(this.endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: history.map(({ role, text }) => ({ role, text })) }),
-            signal,
-        });
-        if (!res.ok) throw new Error(`agent endpoint returned ${res.status}`);
-        return res.json();
+        // text/plain keeps this a CORS simple request (no preflight), which some
+        // mobile browsers/proxies mishandle; the Worker parses the body as JSON
+        // regardless of content type. One automatic retry rides out transient
+        // mobile network drops.
+        const body = JSON.stringify({ messages: history.map(({ role, text }) => ({ role, text })) });
+        let lastError: unknown;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                const res = await fetch(this.endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body,
+                    signal,
+                });
+                if (!res.ok) throw new Error(`agent endpoint returned ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                lastError = err;
+                if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+            }
+        }
+        throw lastError;
     }
 }
 
