@@ -105,33 +105,36 @@ const ALLOWED_TYPES = new Set([
 ]);
 const FILE_KINDS = new Set(['exam', 'lecture', 'slides', 'book', 'other']);
 
-// Per-isolate sliding windows. Good enough for the free tier; each colo
-// isolate keeps its own counter.
-const buckets = new Map();
+/* Sliding-window rate limits stored in the database (rate_buckets +
+   rate_hit RPC), so limits hold across all worker isolates. Fails open on a
+   database error: availability beats strictness at launch scale. */
+async function rateHit(env, key, cap, windowMs, token) {
+    try {
+        const r = await fetch(`${env.SUPA_URL}/rest/v1/rpc/rate_hit`, {
+            method: 'POST',
+            headers: {
+                apikey: env.SUPA_KEY,
+                Authorization: `Bearer ${token || env.SUPA_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ p_key: key, p_cap: cap, p_window_ms: windowMs }),
+        });
+        if (!r.ok) return false;
+        return (await r.json()) === true;
+    } catch { return false; }
+}
 
-function rateLimited(ip) {
-    const now = Date.now();
-    let b = buckets.get(ip);
-    if (!b) { b = { min: [], day: [] }; buckets.set(ip, b); }
-    b.min = b.min.filter((t) => now - t < 60_000);
-    b.day = b.day.filter((t) => now - t < 86_400_000);
-    if (b.min.length >= RATE_PER_MIN || b.day.length >= RATE_PER_DAY) return true;
-    b.min.push(now); b.day.push(now);
-    if (buckets.size > 5000) buckets.clear();
-    return false;
+async function rateLimited(env, ip) {
+    const [min, day] = await Promise.all([
+        rateHit(env, `ip:${ip}:m`, RATE_PER_MIN, 60_000),
+        rateHit(env, `ip:${ip}:d`, RATE_PER_DAY, 86_400_000),
+    ]);
+    return min || day;
 }
 
 /* key: per-user bucket name, cap: max hits per windowMs. Returns true when limited. */
-function userRateLimited(key, cap, windowMs) {
-    const now = Date.now();
-    const k = `u:${key}`;
-    let b = buckets.get(k);
-    if (!b) { b = { hits: [] }; buckets.set(k, b); }
-    if (!b.hits) b.hits = [];
-    b.hits = b.hits.filter((t) => now - t < windowMs);
-    if (b.hits.length >= cap) return true;
-    b.hits.push(now);
-    return false;
+async function userRateLimited(env, key, cap, windowMs, token) {
+    return rateHit(env, `u:${key}`, cap, windowMs, token);
 }
 
 function cors(extra = {}) {
@@ -259,7 +262,7 @@ async function handleUpload(request, env) {
     if (!token) return json({ error: 'سجّل دخولك أولًا.' }, 401);
     const user = await verifyUser(env, token);
     if (!user) return json({ error: 'انتهت الجلسة؛ سجّل دخولك من جديد.' }, 401);
-    if (userRateLimited(`${user.id}:up`, 30, 3_600_000)) {
+    if (await userRateLimited(env, `${user.id}:up`, 30, 3_600_000, token)) {
         return json({ error: 'عدد الرفوع كبير الآن. جرّب بعد قليل.' }, 429);
     }
 
@@ -323,7 +326,7 @@ async function handleDelete(request, env) {
     if (!token) return json({ error: 'سجّل دخولك أولًا.' }, 401);
     const user = await verifyUser(env, token);
     if (!user) return json({ error: 'انتهت الجلسة؛ سجّل دخولك من جديد.' }, 401);
-    if (userRateLimited(`${user.id}:del`, 60, 3_600_000)) {
+    if (await userRateLimited(env, `${user.id}:del`, 60, 3_600_000, token)) {
         return json({ error: 'عدد الطلبات كبير الآن. جرّب بعد قليل.' }, 429);
     }
 
@@ -353,7 +356,7 @@ async function handleFileUrl(request, env, url) {
     if (!token) return json({ error: 'سجّل دخولك أولًا.' }, 401);
     const user = await verifyUser(env, token);
     if (!user) return json({ error: 'انتهت الجلسة؛ سجّل دخولك من جديد.' }, 401);
-    if (userRateLimited(`${user.id}:url`, 120, 3_600_000)) {
+    if (await userRateLimited(env, `${user.id}:url`, 120, 3_600_000, token)) {
         return json({ error: 'عدد الطلبات كبير الآن. جرّب بعد قليل.' }, 429);
     }
 
@@ -381,7 +384,7 @@ async function handleFileUrl(request, env, url) {
 
 async function handleAgent(request, env) {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    if (rateLimited(ip)) {
+    if (await rateLimited(env, ip)) {
         return json({ text: 'عدد الطلبات كبير الآن. جرّب مرة أخرى بعد قليل.', sources: [] }, 200);
     }
 
