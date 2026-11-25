@@ -734,3 +734,89 @@ select.azu-input { cursor: pointer; }
 .azu-about-founders { font-size: 12px; letter-spacing: 2px; color: #c9a24b; font-weight: 700; margin-bottom: 6px; }
 .azu-about-names { font-size: 15px; color: #0c3a34; font-weight: 600; line-height: 1.9; }
 .azu-about-blurb { text-align: center; max-width: 560px; margin-left: auto; margin-right: auto; }
+
+/* ===== AI Agent chat ===== */
+@keyframes azu-agent-in { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes azu-agent-dot { 0%, 60%, 100% { transform: none; opacity: .35; } 30% { transform: translateY(-3px); opacity: 1; } }
+
+.azu-agent-fab {
+    position: fixed; inset-inline-end: 20px; bottom: 20px; z-index: 60;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #0c3a34; color: #f0d98f; border: 1.5px solid #c9a24b;
+    box-shadow: 0 10px 26px rgba(8,40,36,.35);
+    display: grid; place-items: center; cursor: pointer;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+.azu-agent-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 32px rgba(8,40,36,.42); }
+
+.azu-agent {
+    border: 1px solid #e3dbc9; padding: 0; border-radius: 20px; overflow: hidden;
+    width: min(404px, calc(100vw - 32px)); height: min(600px, calc(100dvh - 64px));
+    max-width: none; max-height: none;
+    background: #f5f0e6;
+    box-shadow: 0 24px 60px rgba(8,40,36,.30);
+}
+.azu-agent[open] { animation: azu-agent-in .35s cubic-bezier(.22,.61,.36,1) both; }
+.azu-agent::backdrop { background: rgba(8,40,36,.48); backdrop-filter: blur(2px); }
+.azu-agent-shell { display: flex; flex-direction: column; height: 100%; }
+
+.azu-agent-entry {
+    width: 38px; height: 38px; flex: none; border-radius: 12px;
+    background: #0c3a34; color: #f0d98f; border: 1px solid #c9a24b;
+    display: grid; place-items: center; cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.azu-agent-entry:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(8,40,36,.30); }
+
+.azu-agent-copy { background: none; border: none; color: #8a8270; padding: 5px; cursor: pointer; border-radius: 8px; display: inline-grid; place-items: center; font: inherit; }
+.azu-agent-copy:hover { color: #0c3a34; background: #ece5d3; }
+.azu-agent-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(120deg, #0c3a34, #0f4a41); color: #f5f0e6; }
+.azu-agent-badge { width: 32px; height: 32px; flex: none; border-radius: 10px; background: rgba(201,162,75,.16); border: 1px solid rgba(201,162,75,.55); display: grid; place-items: center; color: #d8c98f; }
+.azu-agent-titles { flex: 1; min-width: 0; }
+.azu-agent-title { font-weight: 800; font-size: 15.5px; line-height: 1.3; }
+.azu-agent-sub { font-size: 9.5px; letter-spacing: .22em; color: #c9a24b; font-weight: 600; margin-top: 1px; }
+.azu-agent-x { background: none; border: none; color: #cfc9ba; cursor: pointer; padding: 6px; display: grid; place-items: center; }
+.azu-agent-x:hover { color: #f5f0e6; }
+
+.azu-agent-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.azu-agent-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: auto; justify-content: center; }
+.azu-agent-chip { border: 1px solid #d8cfb8; background: #fff; color: #0c3a34; border-radius: 999px; padding: 9px 15px; font: inherit; font-size: 13px; cursor: pointer; transition: border-color .2s, background .2s; }
+.azu-agent-chip:hover { border-color: #c9a24b; background: #faf3e0; }
+
+.azu-agent-msg { display: flex; flex-direction: column; gap: 5px; }
+.azu-agent-msg.user { align-items: flex-end; }
+.azu-agent-msg.assistant { align-items: flex-start; }
+.azu-agent-bubble { max-width: 86%; padding: 9px 13px; border-radius: 14px; font-size: 14px; line-height: 1.75; }
+.azu-agent-msg.user .azu-agent-bubble { background: #0c3a34; color: #f5f0e6; border-end-end-radius: 4px; }
+.azu-agent-msg.assistant .azu-agent-bubble { background: #fff; border: 1px solid #e3dbc9; color: #1e2b28; border-end-start-radius: 4px; }
+
+.azu-agent-sources { display: flex; flex-wrap: wrap; gap: 6px; }
+.azu-agent-src { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: #0c3a34; background: #ede6d4; border: 1px solid #d8cfb8; border-radius: 999px; padding: 3px 10px; }
+a.azu-agent-src:hover { border-color: #c9a24b; }
+
+.azu-agent-actions { display: flex; gap: 2px; }
+.azu-agent-actions button { background: none; border: none; color: #8a8270; padding: 5px; cursor: pointer; border-radius: 8px; display: grid; place-items: center; }
+.azu-agent-actions button:hover { color: #0c3a34; background: #ece5d3; }
+.azu-agent-actions button.on { color: #b3882f; }
+
+.azu-agent-typing { display: inline-flex; gap: 5px; align-items: center; padding: 12px 14px; }
+.azu-agent-typing span { width: 6px; height: 6px; border-radius: 50%; background: #0c3a34; animation: azu-agent-dot 1.1s ease-in-out infinite; }
+.azu-agent-typing span:nth-child(2) { animation-delay: .15s; }
+.azu-agent-typing span:nth-child(3) { animation-delay: .3s; }
+
+.azu-agent-input { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-top: 1px solid #e3dbc9; background: #faf6ec; }
+.azu-agent-input input { flex: 1; min-width: 0; border: 1px solid #d8cfb8; border-radius: 999px; padding: 10px 16px; font: inherit; font-size: 14px; background: #fff; color: #1e2b28; outline: none; }
+.azu-agent-input input:focus { border-color: #c9a24b; }
+.azu-agent-send { width: 40px; height: 40px; flex: none; border-radius: 50%; background: #0c3a34; color: #f0d98f; border: none; display: grid; place-items: center; cursor: pointer; }
+.azu-agent-send:disabled { opacity: .35; cursor: default; }
+.azu-agent-clip { background: none; border: none; color: #a39b86; padding: 6px; display: grid; place-items: center; }
+.azu-agent-clip:disabled { cursor: not-allowed; }
+
+@media (max-width: 480px) {
+    .azu-agent { width: calc(100vw - 24px); height: min(620px, calc(100dvh - 48px)); }
+    .azu-agent-fab { inset-inline-end: 16px; bottom: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .azu-agent { animation: none !important; }
+    .azu-agent-typing span { animation: none !important; }
+}

@@ -7,6 +7,7 @@ import aboutPhoto from './photos/about-team.jpg';
 /* ---------- Data ---------- */
 
 import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, GRADES, gradeFromPercent, gradeFromGPA, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES } from './data';
+import { AgentChat, AGENT_OPEN_EVENT } from './AgentChat';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software } from './data';
 
 type Faculty = { id: string; ar: string; en: string; city: string };
@@ -112,6 +113,10 @@ function TopBar() {
             <NavLink to="/community">Community</NavLink>
             <NavLink to="/about">About</NavLink>
         </nav>
+        <button type="button" className="azu-agent-entry" aria-label="مساعد AZU Science الذكي" title="مساعد AZU Science الذكي"
+            onClick={() => window.dispatchEvent(new CustomEvent(AGENT_OPEN_EVENT))}>
+            <Icon name="spark" size={16} />
+        </button>
         <Link to="/signin" className="azu-signin"><Icon name="user" size={16} /> Sign In</Link>
     </header>;
 }
@@ -832,6 +837,7 @@ export function App() {
                 <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>قريبًا.</p></SimplePage>} />
             </Routes>
             <Footer />
+            <AgentChat />
         </div>
     </FileCard>;
 }

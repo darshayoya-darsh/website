@@ -4,4 +4,6 @@ import { FileRouter } from '@instinct/files';
 import { App } from './App';
 import './style.css';
 
+(window as any).__AZU_FILE_ENV__ = true;
+
 createRoot(document.getElementById('root')!).render(<FileRouter><App /></FileRouter>);
