@@ -6,24 +6,15 @@ import aboutPhoto from './photos/founder-mustafa.jpg';
 
 /* ---------- Data ---------- */
 
-import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, GRADES, gradeFromPercent, gradeFromGPA, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES } from './data';
+import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, GRADES, gradeFromPercent, gradeFromGPA, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES, FACULTIES, YEAR_NAMES, TERM_NAMES, CONTACT_EMAIL } from './data';
 import { BYLAW, COURSE_FILES, RESOURCE_TYPES } from './bylaw';
 import { AgentChat, AGENT_OPEN_EVENT } from './AgentChat';
-import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software } from './data';
-
-type Faculty = { id: string; ar: string; en: string; city: string };
-
-const FACULTIES: Faculty[] = [
-    { id: 'boys-cairo', ar: 'علوم بنين', en: 'Science — Boys', city: 'القاهرة' },
-    { id: 'girls-cairo', ar: 'علوم بنات', en: 'Science — Girls', city: 'القاهرة' },
-    { id: 'boys-assiut', ar: 'علوم بنين', en: 'Science — Boys', city: 'أسيوط' },
-    { id: 'girls-assiut', ar: 'علوم بنات', en: 'Science — Girls', city: 'أسيوط' },
-];
+import { Icon } from './Icon';
+import { MobileNav, SearchOverlay, TopNavLinks } from './nav';
+import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software, Faculty } from './data';
 
 const ASTRO_TRACKS = ['فلك وأرصاد', 'فلك خاص', 'أرصاد خاص'];
 const deptsFor = (facultyId: string) => DEPARTMENTS.filter(d => !d.onlyFaculties || d.onlyFaculties.includes(facultyId));
-
-const YEAR_NAMES: Record<number, string> = { 1: 'السنة الأولى', 2: 'السنة الثانية', 3: 'السنة الثالثة', 4: 'السنة الرابعة' };
 
 const NEWS = [
     { chip: 'News', date: 'Sep 5, 2026', title: 'Start of the New Academic Year', text: 'Important information for all students regarding registration and schedules.' },
@@ -37,42 +28,6 @@ const STATS = [
     { icon: 'flask', value: '20+', label: 'Research Projects' },
     { icon: 'landmark', value: '10+', label: 'Departments' },
 ];
-
-/* ---------- Icons (inline SVG, no emoji) ---------- */
-
-function Icon({ name, size = 24 }: { name: string; size?: number }) {
-    const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
-    switch (name) {
-        case 'books': return <svg {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z" /><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" /><path d="M9 8h7" /></svg>;
-        case 'microscope': return <svg {...p}><path d="M6 18h8" /><path d="M3 22h18" /><path d="M14 22a7 7 0 1 0 0-14h-1" /><path d="M9 14h2" /><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2z" /><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" /></svg>;
-        case 'briefcase': return <svg {...p}><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>;
-        case 'megaphone': return <svg {...p}><path d="M3 11l18-5v12L3 13v-2z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" /></svg>;
-        case 'users': return <svg {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
-        case 'user': return <svg {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
-        case 'flask': return <svg {...p}><path d="M9 3h6" /><path d="M10 3v6L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9V3" /><path d="M7.5 15h9" /></svg>;
-        case 'landmark': return <svg {...p}><path d="M3 22h18" /><path d="M6 18v-7" /><path d="M10 18v-7" /><path d="M14 18v-7" /><path d="M18 18v-7" /><path d="M12 2L3 7h18l-9-5z" /><path d="M4 11h16" /></svg>;
-        case 'atom': return <svg {...p}><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><ellipse cx="12" cy="12" rx="10" ry="4" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)" /></svg>;
-        case 'sigma': return <svg {...p}><path d="M18 5H7l6 7-6 7h11" /></svg>;
-        case 'rock': return <svg {...p}><path d="M3 20l4-12 5 3 3-7 6 16H3z" /><path d="M7 8l2 6" /></svg>;
-        case 'leaf': return <svg {...p}><path d="M11 20A7 7 0 0 1 4 13c0-4 3-8 9-10 4-1.3 7-1 7-1s.3 3-1 7c-2 6-6 9-8 11z" /><path d="M4 21c4-6 8-9 12-11" /></svg>;
-        case 'arrow': return <svg {...p}><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg>;
-        case 'down': return <svg {...p}><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></svg>;
-        case 'back': return <svg {...p}><path d="M19 12H5" /><path d="M11 18l-6-6 6-6" /></svg>;
-        case 'camera': return <svg {...p}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>;
-        case 'cap': return <svg {...p}><path d="M22 9L12 4 2 9l10 5 10-5z" /><path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" /><path d="M22 9v5" /></svg>;
-        case 'spark': return <svg {...p}><path d="M12 2l2.2 6.2L21 10l-6.8 1.8L12 18l-2.2-6.2L3 10l6.8-1.8L12 2z" /></svg>;
-        case 'globe': return <svg {...p}><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z" /></svg>;
-        case 'search': return <svg {...p}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>;
-        case 'clock': return <svg {...p}><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
-        case 'calc': return <svg {...p}><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8" /><path d="M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2" /></svg>;
-        case 'target': return <svg {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" /></svg>;
-        case 'code': return <svg {...p}><path d="M8 6l-6 6 6 6" /><path d="M16 6l6 6-6 6" /><path d="M13 4l-2 16" /></svg>;
-        case 'extlink': return <svg {...p}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6" /><path d="M10 14L21 3" /></svg>;
-        case 'download': return <svg {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>;
-        case 'check': return <svg {...p}><path d="M20 6L9 17l-5-5" /></svg>;
-        default: return null;
-    }
-}
 
 /* ---------- Viewport sync (works inside the File viewer iframe) ----------
    The viewer embeds the app full-height and scrolls the parent page, so
@@ -160,33 +115,41 @@ function CountUp({ value }: { value: string }) {
 
 function TopBar() {
     const [scrolled, setScrolled] = React.useState(false);
+    const qs = React.useMemo(() => new URLSearchParams(window.location.search), []);
+    const [menuOpen, setMenuOpen] = React.useState(() => qs.has('menu'));
+    const [searchOpen, setSearchOpen] = React.useState(() => qs.has('search'));
     React.useEffect(() => {
         return onVp(() => setScrolled(vp.top > 40));
     }, []);
-    return <header className={`azu-topbar${scrolled ? ' is-scrolled' : ''}`}>
-        <Link to="/" className="azu-brand">
-            <img src={logoImg} alt="AZU Science logo" className="azu-brand-logo" />
-            <span className="azu-brand-text">
-                <span className="azu-brand-name">AZU Science</span>
-                <span className="azu-brand-sub">The Student Platform for the Faculty of Science</span>
-            </span>
-        </Link>
-        <nav className="azu-nav" aria-label="Main">
-            <NavLink to="/" end>Home</NavLink>
-            <NavLink to="/academic">Academic</NavLink>
-            <NavLink to="/tools">Tools</NavLink>
-            <NavLink to="/research">Research</NavLink>
-            <NavLink to="/opportunities">Opportunities</NavLink>
-            <NavLink to="/news">News</NavLink>
-            <NavLink to="/community">Community</NavLink>
-            <NavLink to="/about">About</NavLink>
-        </nav>
-        <button type="button" className="azu-agent-entry" aria-label="مساعد AZU Science الذكي" title="مساعد AZU Science الذكي"
-            onClick={() => window.dispatchEvent(new CustomEvent(AGENT_OPEN_EVENT))}>
-            <Icon name="spark" size={16} />
-        </button>
-        <Link to="/signin" className="azu-signin"><Icon name="user" size={16} /> Sign In</Link>
-    </header>;
+    return <>
+        <header className={`azu-topbar${scrolled ? ' is-scrolled' : ''}`}>
+            <button type="button" className="azu-iconbtn azu-menu-btn" aria-label="القائمة" title="القائمة"
+                onClick={() => setMenuOpen(true)}>
+                <Icon name="menu" size={19} />
+            </button>
+            <Link to="/" className="azu-brand">
+                <img src={logoImg} alt="AZU Science logo" className="azu-brand-logo" />
+                <span className="azu-brand-text">
+                    <span className="azu-brand-name">AZU Science</span>
+                    <span className="azu-brand-sub">The Student Platform for the Faculty of Science</span>
+                </span>
+            </Link>
+            <nav className="azu-nav" aria-label="Main">
+                <TopNavLinks />
+            </nav>
+            <button type="button" className="azu-agent-entry" aria-label="بحث شامل" title="بحث شامل"
+                onClick={() => setSearchOpen(true)}>
+                <Icon name="search" size={16} />
+            </button>
+            <button type="button" className="azu-agent-entry" aria-label="مساعد AZU Science الذكي" title="مساعد AZU Science الذكي"
+                onClick={() => window.dispatchEvent(new CustomEvent(AGENT_OPEN_EVENT))}>
+                <Icon name="spark" size={16} />
+            </button>
+            <Link to="/signin" className="azu-signin"><Icon name="user" size={16} /> <span className="azu-signin-label">Sign In</span></Link>
+        </header>
+        {menuOpen && <MobileNav onClose={() => setMenuOpen(false)} />}
+        {searchOpen && <SearchOverlay initial={qs.get('search') ?? ''} onClose={() => setSearchOpen(false)} />}
+    </>;
 }
 
 function Footer() {
@@ -210,9 +173,9 @@ function Footer() {
             </div>
             <div className="azu-footer-col">
                 <div className="azu-footer-head">Support</div>
-                <span className="azu-footer-note">FAQ — قريبًا</span>
-                <span className="azu-footer-note">Contact Us — قريبًا</span>
-                <span className="azu-footer-note">Report an Issue — قريبًا</span>
+                <Link to="/faq">FAQ</Link>
+                <Link to="/contact">Contact Us</Link>
+                <Link to="/report">Report an Issue</Link>
             </div>
             <div className="azu-footer-col">
                 <div className="azu-footer-head">Follow Us</div>
@@ -544,8 +507,6 @@ function DepartmentPage({ faculty, dept }: { faculty: Faculty; dept: Dept }) {
         </div>}
     </section>;
 }
-
-const TERM_NAMES: Record<number, string> = { 1: 'الفصل الدراسي الأول', 2: 'الفصل الدراسي الثاني' };
 
 function bylawTracks(facultyId: string, deptId: string, year: number) {
     return (BYLAW[deptId]?.[year] ?? []).filter(t => facultyId === 'boys-cairo' || !t.cairoOnly);
@@ -880,6 +841,72 @@ function SimplePage({ kicker, title, icon, children }: { kicker: string; title: 
     </section>;
 }
 
+
+/* ---------- FAQ / Contact / Report ---------- */
+
+const FAQS = [
+    { q: 'إيه هي منصة AZU Science؟', a: 'منصة طلابية مستقلة بتجمع لطالب علوم الأزهر كل اللي محتاجه في مكان واحد: المواد والملفات الدراسية، الأدوات زي الحاسبة الأكاديمية، مكتبة البرامج العلمية، والفرص والأخبار.' },
+    { q: 'هل المنصة تابعة للجامعة أو الكلية؟', a: 'لأ. AZU Science مبادرة طلابية مستقلة أسسها طالب من الكلية، ومش موقع رسمي لجامعة الأزهر ولا لكلية العلوم.' },
+    { q: 'هل نتايج الحاسبة الأكاديمية رسمية؟', a: 'لأ، النتايج استرشادية بس. الحاسبة مبنية على النموذج المعتمد في لوائح الساعات المعتمدة، وقد تختلف تفاصيل لائحة كليتك أو برنامجك — التقدير الرسمي بييجي من شئون الكلية بس.' },
+    { q: 'ليه ملفات المواد مكتوب عليها قريبًا؟', a: 'المنصة لسه في بدايتها، وشغالين على تجميع الامتحانات السابقة والمحاضرات وسلايدات الدكاترة وكتب الكلية لكل مادة، وهتتنزل تباعًا أول بأول.' },
+    { q: 'ليه ممكن ألاقي فرق بين مواد قسمي والموجود على المنصة؟', a: 'بيانات المواد الحالية مأخوذة من لائحة علوم بنين القاهرة، وهي مشتركة مع باقي الكليات في معظم الأقسام — لو لقيت فرق في قسمك ابعتلنا من صفحة الإبلاغ عن مشكلة وهنراجعه.' },
+    { q: 'إزاي أساعد في تطوير المنصة؟', a: 'أي ملفات أو امتحانات أو ملاحظات عندك لأي مادة بتفرق معانا كتير — ابعتلنا من صفحة تواصل معنا.' },
+    { q: 'مين اللي بيدير المنصة؟', a: 'طالب من علوم الأزهر، وتقدر تعرف أكتر في صفحة About.' },
+];
+
+function FaqPage() {
+    const [open, setOpen] = React.useState<number | null>(0);
+    return <section className="azu-section azu-flow">
+        <Crumb items={[{ label: 'Home', to: '/' }, { label: 'FAQ' }]} />
+        <div className="azu-kicker">FAQ</div>
+        <h2 className="azu-title">الأسئلة الشائعة</h2>
+        <div className="azu-faq-list" dir="rtl">
+            {FAQS.map((f, i) => <div key={i} className={`azu-faq${open === i ? ' is-open' : ''}`}>
+                <button type="button" className="azu-faq-q" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
+                    <span>{f.q}</span>
+                    <Icon name="down" size={16} />
+                </button>
+                {open === i && <p className="azu-faq-a">{f.a}</p>}
+            </div>)}
+        </div>
+    </section>;
+}
+
+function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
+    const isReport = kind === 'report';
+    const [name, setName] = React.useState('');
+    const [from, setFrom] = React.useState('');
+    const [msg, setMsg] = React.useState('');
+    const ready = CONTACT_EMAIL !== '';
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!ready) return;
+        const subject = isReport ? 'بلاغ عن مشكلة — AZU Science' : 'رسالة من منصة AZU Science';
+        const page = isReport ? `\n\nالصفحة: ${window.location.href}` : '';
+        const body = `الاسم: ${name}\nالبريد: ${from}\n\n${msg}${page}`;
+        window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    };
+    return <section className="azu-section azu-flow">
+        <Crumb items={[{ label: 'Home', to: '/' }, { label: isReport ? 'Report an Issue' : 'Contact Us' }]} />
+        <div className="azu-kicker">{isReport ? 'REPORT AN ISSUE' : 'CONTACT US'}</div>
+        <h2 className="azu-title" dir="rtl">{isReport ? 'الإبلاغ عن مشكلة' : 'تواصل معنا'}</h2>
+        <form className="azu-form" dir="rtl" onSubmit={submit}>
+            <label className="azu-field">الاسم
+                <input className="azu-input" value={name} onChange={e => setName(e.target.value)} required disabled={!ready} />
+            </label>
+            <label className="azu-field">بريدك الإلكتروني (اختياري)
+                <input className="azu-input" type="email" dir="ltr" value={from} onChange={e => setFrom(e.target.value)} disabled={!ready} />
+            </label>
+            <label className="azu-field">{isReport ? 'وصف المشكلة' : 'رسالتك'}
+                <textarea className="azu-input azu-textarea" rows={5} value={msg} onChange={e => setMsg(e.target.value)} required disabled={!ready} />
+            </label>
+            {ready
+                ? <button type="submit" className="azu-btn azu-btn-primary"><Icon name="mail" size={15} /> إرسال</button>
+                : <span className="azu-tag">قريبًا</span>}
+        </form>
+    </section>;
+}
+
 /* ---------- App ---------- */
 
 export function App() {
@@ -945,6 +972,9 @@ export function App() {
                     <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالب من طلابها آمن بأن زملاءه يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحمل على عاتقه بناءها وجمع ما يحتاجه الطالب في مكان واحد، لتبقى مبادرة طلابية خالصة: من الطلاب، وإليهم.</p>
                 </section>} />
                 <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>قريبًا.</p></SimplePage>} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/contact" element={<MessagePage kind="contact" />} />
+                <Route path="/report" element={<MessagePage kind="report" />} />
                 <Route path="*" element={<SimplePage kicker="404" title="Page Not Found" icon="search"><p>الصفحة غير موجودة.</p><p><Link to="/" className="azu-btn azu-btn-outline">العودة للرئيسية</Link></p></SimplePage>} />
             </Routes>
             <Footer />

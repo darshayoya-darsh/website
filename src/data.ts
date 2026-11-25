@@ -446,3 +446,20 @@ export const SOFTWARE: Software[] = [
     },
 ];
 
+
+/* ---------- Shared site structure ---------- */
+
+export type Faculty = { id: string; ar: string; en: string; city: string };
+
+export const FACULTIES: Faculty[] = [
+    { id: 'boys-cairo', ar: 'علوم بنين', en: 'Science — Boys', city: 'القاهرة' },
+    { id: 'girls-cairo', ar: 'علوم بنات', en: 'Science — Girls', city: 'القاهرة' },
+    { id: 'boys-assiut', ar: 'علوم بنين', en: 'Science — Boys', city: 'أسيوط' },
+    { id: 'girls-assiut', ar: 'علوم بنات', en: 'Science — Girls', city: 'أسيوط' },
+];
+
+export const YEAR_NAMES: Record<number, string> = { 1: 'السنة الأولى', 2: 'السنة الثانية', 3: 'السنة الثالثة', 4: 'السنة الرابعة' };
+export const TERM_NAMES: Record<number, string> = { 1: 'الفصل الدراسي الأول', 2: 'الفصل الدراسي الثاني' };
+
+/* Destination for Contact / Report messages; empty until an official address is set. */
+export const CONTACT_EMAIL = '';
