@@ -80,6 +80,23 @@ export async function removeGrant(id: number): Promise<void> {
     await rest(`/admin_grants?id=eq.${id}`, { method: 'DELETE' });
 }
 
+export interface AccountRow {
+    id: string;
+    full_name: string;
+    email: string;
+    role: string;
+    faculty: string | null;
+    department: string | null;
+    year: number | null;
+    created_at: string;
+}
+
+/* RLS limits this to the super admin (profiles_select_super policy). */
+export async function listAccounts(): Promise<AccountRow[]> {
+    const r = await rest('/profiles?select=id,full_name,email,role,faculty,department,year,created_at&order=created_at.desc&limit=1000');
+    return r.json();
+}
+
 export async function listFiles(): Promise<FileRow[]> {
     const r = await rest('/files?select=id,faculty,department,year,course_code,title,kind,size_bytes,status,created_at&order=created_at.desc&limit=300');
     return r.json();

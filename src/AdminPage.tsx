@@ -4,8 +4,8 @@ import { Icon } from './Icon';
 import { useAuth } from './auth';
 import { DEPARTMENTS, FACULTIES, YEAR_NAMES } from './data';
 import {
-    Grant, FileRow, Scope, FILE_KINDS,
-    myGrants, addGrant, removeGrant, listFiles, canManage,
+    Grant, FileRow, Scope, FILE_KINDS, AccountRow,
+    myGrants, addGrant, removeGrant, listFiles, listAccounts, canManage,
     uploadCourseFile, deleteFile, fileUrl, validateUpload, fmtSize,
 } from './admin';
 
@@ -243,6 +243,62 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
     </div>;
 }
 
+/* الحسابات المسجلة: للسوبر أدمن فقط. القراءة محمية بسياسة RLS
+   (profiles_select_super)؛ غير السوبر لا تصله البيانات أصلًا. */
+function AccountsSection({ grants }: { grants: Grant[] }) {
+    const [accounts, setAccounts] = React.useState<AccountRow[] | null>(null);
+    const [err, setErr] = React.useState('');
+    const [q, setQ] = React.useState('');
+
+    React.useEffect(() => {
+        listAccounts().then(setAccounts).catch((ex) => setErr(ex instanceof Error ? ex.message : 'تعذر تحميل الحسابات.'));
+    }, []);
+
+    const needle = q.trim().toLowerCase();
+    const shown = (accounts || []).filter((a) => !needle
+        || (a.full_name || '').toLowerCase().includes(needle)
+        || (a.email || '').toLowerCase().includes(needle));
+
+    const academic = (a: AccountRow) => {
+        const parts: string[] = [];
+        if (a.department) parts.push(deptName(a.department));
+        if (a.year) parts.push(YEAR_NAMES[a.year] || `السنة ${a.year}`);
+        if (a.faculty) parts.push(facultyName(a.faculty));
+        return parts.length ? parts.join(' · ') : '';
+    };
+    const fmtDate = (iso: string) => {
+        try { return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }); }
+        catch { return ''; }
+    };
+
+    return <div className="azu-admin-card" dir="rtl">
+        <h3 className="azu-admin-h">الحسابات المسجلة{accounts ? ` (${accounts.length})` : ''}</h3>
+        <p className="azu-admin-note">كل الحسابات المسجلة على المنصة، الأحدث أولًا.</p>
+        <input className="azu-input" type="search" dir="rtl" placeholder="ابحث بالاسم أو البريد…"
+            value={q} onChange={(e) => setQ(e.target.value)} />
+        {err && <p className="azu-admin-err" role="alert">{err}</p>}
+        {!accounts && !err && <p className="azu-admin-note">لحظات…</p>}
+        <div className="azu-admin-grants">
+            {shown.map((a) => {
+                const grant = grants.find((g) => g.email === a.email);
+                return <div key={a.id} className="azu-admin-row">
+                    <div className="azu-admin-row-main">
+                        <span className="azu-admin-row-title">
+                            {a.full_name || 'بدون اسم'}
+                            {a.role === 'admin' && <span className="azu-tag">مشرف</span>}
+                        </span>
+                        <span className="azu-admin-row-meta" dir="ltr">{a.email}</span>
+                        {academic(a) && <span className="azu-admin-row-meta">{academic(a)}</span>}
+                        {grant && <span className="azu-admin-row-meta">صلاحية مشرف: {scopeLabel(grant)}</span>}
+                        <span className="azu-admin-row-meta">سجّل: {fmtDate(a.created_at)}</span>
+                    </div>
+                </div>;
+            })}
+            {accounts && shown.length === 0 && <p className="azu-admin-note">لا نتائج مطابقة.</p>}
+        </div>
+    </div>;
+}
+
 export function AdminPage() {
     const session = useAuth();
     const [grants, setGrants] = React.useState<Grant[] | null>(null);
@@ -294,5 +350,6 @@ export function AdminPage() {
         <Uploader grants={grants || []} isSuper={!!isSuper} onUploaded={(row) => setFiles([row, ...files])} />
         <FilesList grants={grants || []} isSuper={!!isSuper} files={files} setFiles={setFiles} />
         {isSuper && <GrantsManager grants={grants || []} reload={reload} />}
+        {isSuper && <AccountsSection grants={grants || []} />}
     </section>;
 }
