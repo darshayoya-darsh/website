@@ -5,11 +5,17 @@ import React from 'react';
 
 export const SUPA_URL = 'https://nhufspxzwbtvmamukpoa.supabase.co';
 export const SUPA_KEY = 'sb_publishable_Q0OuPQHYGAb271d0jkxIBw_6yMueXMk';
+
+/* Confirmation emails must return to a live site. The File viewer renders the
+   app in a cross-origin iframe that can never receive the token hash, so the
+   GitHub Pages site is the only valid landing page. */
+const SITE_URL = 'https://darshayoya-darsh.github.io/website/';
+const REDIRECT_Q = `?redirect_to=${encodeURIComponent(SITE_URL)}`;
 const LS_KEY = 'azu_auth_v1';
 const HAS_ACCOUNT_KEY = 'azu_has_account';
 
 export interface AuthUser { id: string; email: string; fullName: string; role: string; avatarPath?: string | null; }
-export interface AuthSession { access_token: string; refresh_token: string; user: AuthUser; }
+export interface AuthSession { access_token: string; refresh_token: string; user: AuthUser; justConfirmed?: boolean; }
 
 let session: AuthSession | null = null;
 try {
@@ -23,12 +29,37 @@ function setSession(s: AuthSession | null) {
     session = s;
     try {
         if (s) {
-            localStorage.setItem(LS_KEY, JSON.stringify(s));
+            const { justConfirmed, ...persist } = s; // one-shot flag, never persisted
+            localStorage.setItem(LS_KEY, JSON.stringify(persist));
             localStorage.setItem(HAS_ACCOUNT_KEY, '1');
         } else localStorage.removeItem(LS_KEY);
     } catch { /* private mode */ }
     emit();
 }
+
+export function clearJustConfirmed() {
+    if (session?.justConfirmed) setSession({ ...session, justConfirmed: false });
+}
+
+/* Pick up the session a confirmation-email link drops in the URL hash
+   (#access_token=...&type=signup) and mark it as freshly confirmed. */
+function consumeHashSession() {
+    try {
+        if (typeof window === 'undefined' || !window.location.hash) return;
+        const h = new URLSearchParams(window.location.hash.slice(1));
+        const at = h.get('access_token');
+        const rt = h.get('refresh_token');
+        const type = h.get('type') || '';
+        if (!at || !rt) return;
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        fetch(`${SUPA_URL}/auth/v1/user`, { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}` } })
+            .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+            .then((u) => loadProfile(at, u))
+            .then((u) => setSession({ access_token: at, refresh_token: rt, user: u, justConfirmed: type === 'signup' }))
+            .catch(() => {});
+    } catch { /* no window */ }
+}
+consumeHashSession();
 
 export function hasAccountFlag(): boolean {
     try { return !!localStorage.getItem(HAS_ACCOUNT_KEY); } catch { return false; }
@@ -98,7 +129,7 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 /* Returns 'in' when email confirmation is off (session issued right away),
    'confirm' when the project requires confirming the email first. */
 export async function signUp(fullName: string, email: string, password: string): Promise<'in' | 'confirm'> {
-    const data = await api('/auth/v1/signup', { email, password, data: { full_name: fullName } });
+    const data = await api(`/auth/v1/signup${REDIRECT_Q}`, { email, password, data: { full_name: fullName } });
     if (data.access_token) {
         const u = await loadProfile(data.access_token, data.user);
         setSession({ access_token: data.access_token, refresh_token: data.refresh_token, user: u });
@@ -180,5 +211,5 @@ export async function fetchAvatarUrl(path: string): Promise<string | null> {
 /* Resend the signup confirmation email (current account model keeps email
    confirmation until the reference-list model is decided). */
 export async function resendConfirmation(email: string): Promise<void> {
-    await api('/auth/v1/resend', { type: 'signup', email });
+    await api(`/auth/v1/resend${REDIRECT_Q}`, { type: 'signup', email });
 }

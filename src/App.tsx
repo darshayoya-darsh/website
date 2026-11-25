@@ -14,6 +14,7 @@ import { AuthPage } from './AuthPage';
 import { AdminPage } from './AdminPage';
 import { Icon } from './Icon';
 import { MobileNav, SearchOverlay, TopNavLinks, SignInLink } from './nav';
+import { clearJustConfirmed, useAuth } from './auth';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software, Faculty } from './data';
 
 const ASTRO_TRACKS = ['فلك وأرصاد', 'فلك خاص', 'أرصاد خاص'];
@@ -971,6 +972,17 @@ function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
     </section>;
 }
 
+/* One-shot banner after a confirmation-email link signs the student in. */
+function ConfirmedBanner() {
+    const session = useAuth();
+    if (!session?.justConfirmed) return null;
+    return <div className="azu-confirmed" dir="rtl" role="status">
+        <Icon name="check" size={16} />
+        <span>تم تأكيد بريدك الإلكتروني بنجاح. أهلًا بك في المنصة.</span>
+        <button type="button" className="azu-iconbtn" aria-label="إغلاق" onClick={() => clearJustConfirmed()}><Icon name="close" size={15} /></button>
+    </div>;
+}
+
 /* ---------- App ---------- */
 
 export function App() {
@@ -1009,6 +1021,7 @@ export function App() {
     return <FileCard>
         <div className="azu-page">
             <TopBar />
+            <ConfirmedBanner />
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/academic" element={<Academic />} />

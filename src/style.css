@@ -1059,3 +1059,9 @@ dialog.azu-searchdlg::backdrop { background: rgba(8,40,36,.55); }
 .azu-contact-line svg { color: #c9a24b; flex-shrink: 0; }
 .azu-contact-line a { color: #177a68; font-weight: 700; text-decoration: none; }
 .azu-contact-line a:hover { text-decoration: underline; }
+
+/* One-shot email-confirmation banner */
+.azu-confirmed { display: flex; align-items: center; gap: 10px; direction: rtl; margin: 12px auto 0; max-width: 720px; padding: 10px 14px; border-radius: 12px; background: #0c3a34; color: #f5f0e6; font-size: 14px; font-weight: 600; }
+.azu-confirmed svg { color: #c9a24b; flex: none; }
+.azu-confirmed span { flex: 1; }
+.azu-confirmed .azu-iconbtn { width: 30px; height: 30px; border: 0; background: transparent; color: #f5f0e6; }
