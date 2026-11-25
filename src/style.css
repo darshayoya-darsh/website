@@ -924,5 +924,6 @@ a.azu-agent-src:hover { border-color: #c9a24b; }
 .azu-res-name { font-size: 14.5px; font-weight: 700; }
 .azu-res-links { display: flex; flex-direction: column; gap: 6px; }
 .azu-res-link { color: #0c3a34; font-size: 13px; text-decoration: underline; }
-a.azu-termbtn, a.azu-termbtn:visited, a.azu-termbtn:hover { color: #f5f0e6; }
+a.azu-termbtn, a.azu-termbtn:visited, a.azu-termbtn:hover { color: #f5f0e6 !important; }
+a.azu-coursebtn, a.azu-coursebtn:visited, a.azu-coursebtn:hover { color: #0c3a34 !important; }
 a.azu-coursebtn, a.azu-coursebtn:visited { color: #0c3a34; }
