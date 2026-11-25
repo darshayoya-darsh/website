@@ -1,0 +1,8 @@
+/* Standalone-web environment: replace platform design variables and padding offsets. */
+:root {
+    --ds-font-text: 'Inter', 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ds-font-display: 'Marcellus', 'Tajawal', Georgia, serif;
+}
+html, body { margin: 0; padding: 0; background: #f5f0e6; }
+.azu-page { margin: 0 !important; }
+@media (min-width: 768px) { .azu-page { margin: 0 !important; } }

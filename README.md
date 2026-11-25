@@ -17,8 +17,15 @@
 ## ملاحظات تقنية
 
 - التطبيق مبني بـ React ويعمل على منصة Instinct Files (الاستيراد من `@instinct/files`)، والنسخة المنشورة متاحة على رابط المنصة.
+- الموقع متاح أيضًا كنسخة مستقلة على GitHub Pages: يبنيها مجلد `web/` (Vite) من نفس ملفات `src/`، وتُنشر من فرع `gh-pages`.
 - التصميم عربي أولًا (RTL) مع دعم كامل للإنجليزية، ومتجاوب مع الشاشات الصغيرة.
 - بدون إيموجي في واجهة الموقع — أيقونات SVG فقط.
+
+## النشر على GitHub Pages
+
+- النسخة المستقلة تعيش على: `https://darshayoya-darsh.github.io/website/`
+- للبناء محليًا: `cd web && npm install && npm run build`
+- النشر: محتويات `web/dist` تُدفع إلى فرع `gh-pages`. النشر التلقائي عبر GitHub Actions سيُفعّل لاحقًا (ملف الworkflow جاهز ويحتاج صلاحية `workflow` في التوكن أو إضافته من واجهة GitHub).
 
 ---
 
@@ -39,8 +46,15 @@ A student initiative — built by students, for students.
 ### Technical notes
 
 - React app running on the Instinct Files platform (`@instinct/files` imports); the published version lives on the platform link.
+- The site also ships as a standalone build on GitHub Pages: `web/` (Vite) builds from the same `src/` files and deploys from the `gh-pages` branch.
 - Arabic-first RTL design with English support, fully responsive.
 - No emojis in the UI — SVG icons only.
+
+### GitHub Pages
+
+- Standalone build lives at: `https://darshayoya-darsh.github.io/website/`
+- Build locally: `cd web && npm install && npm run build`
+- Deploy: push the contents of `web/dist` to the `gh-pages` branch. Auto-deploy via GitHub Actions will be enabled later (the workflow file is ready and needs a token with the `workflow` scope, or adding it through the GitHub web UI).
 
 ---
 
