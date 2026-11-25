@@ -8,6 +8,7 @@ import aboutPhoto from './photos/founder-mustafa.jpg';
 
 import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, GRADES, gradeFromPercent, gradeFromGPA, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES, FACULTIES, YEAR_NAMES, TERM_NAMES, CONTACT_EMAIL } from './data';
 import { BYLAW, COURSE_FILES, RESOURCE_TYPES } from './bylaw';
+import type { BylawTrack } from './bylaw';
 import { AgentChat, AGENT_OPEN_EVENT } from './AgentChat';
 import { Icon } from './Icon';
 import { MobileNav, SearchOverlay, TopNavLinks } from './nav';
@@ -512,7 +513,11 @@ function bylawTracks(facultyId: string, deptId: string, year: number) {
     return (BYLAW[deptId]?.[year] ?? []).filter(t => facultyId === 'boys-cairo' || !t.cairoOnly);
 }
 
-function acadCrumb(faculty: Faculty, dept: Dept, year?: number, term?: number, courseName?: string) {
+function yearBase(faculty: Faculty, dept: Dept, year: number) {
+    return `/academic/${faculty.id}/basic/${dept.id}/year/${year}`;
+}
+
+function acadCrumb(faculty: Faculty, dept: Dept, year?: number, track?: { ti: number; name: string }, term?: number, courseName?: string) {
     const items = [
         { label: 'Home', to: '/' },
         { label: 'Academic', to: '/academic' },
@@ -520,14 +525,39 @@ function acadCrumb(faculty: Faculty, dept: Dept, year?: number, term?: number, c
         { label: 'أقسام أساسية', to: `/academic/${faculty.id}/basic` },
         { label: dept.ar, to: `/academic/${faculty.id}/basic/${dept.id}` },
     ];
-    if (year) items.push({ label: YEAR_NAMES[year], to: term || courseName ? `/academic/${faculty.id}/basic/${dept.id}/year/${year}` : undefined } as any);
-    if (year && term) items.push({ label: TERM_NAMES[term], to: courseName ? `/academic/${faculty.id}/basic/${dept.id}/year/${year}/term/${term}` : undefined } as any);
+    if (year) items.push({ label: YEAR_NAMES[year], to: track || term || courseName ? yearBase(faculty, dept, year) : undefined } as any);
+    if (year && track) items.push({ label: `شعبة ${track.name}`, to: term || courseName ? `${yearBase(faculty, dept, year)}/track/${track.ti}` : undefined } as any);
+    if (year && term) items.push({ label: TERM_NAMES[term] } as any);
     if (courseName) items.push({ label: courseName } as any);
     return items;
 }
 
+function Flow404({ backTo, backLabel }: { backTo: string; backLabel: string }) {
+    return <>
+        <div className="azu-kicker">404</div>
+        <h2 className="azu-title">الصفحة غير موجودة.</h2>
+        <p><Link to={backTo} className="azu-btn azu-btn-outline">{backLabel}</Link></p>
+    </>;
+}
+
+function TrackChooser({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year: number }) {
+    const tracks = bylawTracks(faculty.id, dept.id, year);
+    const base = yearBase(faculty, dept, year);
+    return <section className="azu-section azu-flow">
+        <Crumb items={acadCrumb(faculty, dept, year)} />
+        <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year}</div>
+        <h2 className="azu-title" dir="rtl">{dept.ar} — {YEAR_NAMES[year]}</h2>
+        <p className="azu-lead">اختار شعبتك.</p>
+        <div className="azu-termbtns" dir="rtl">
+            {tracks.map((t, ti) => <Link key={t.track} to={`${base}/track/${ti}`} className="azu-termbtn"><Icon name="cap" size={20} /> شعبة {t.track}</Link>)}
+        </div>
+    </section>;
+}
+
 function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year: number }) {
-    const base = `/academic/${faculty.id}/basic/${dept.id}/year/${year}`;
+    const tracks = bylawTracks(faculty.id, dept.id, year);
+    if (tracks.length > 1) return <TrackChooser faculty={faculty} dept={dept} year={year} />;
+    const base = yearBase(faculty, dept, year);
     return <section className="azu-section azu-flow">
         <Crumb items={acadCrumb(faculty, dept, year)} />
         <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year}</div>
@@ -539,48 +569,73 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
     </section>;
 }
 
-function TermPage({ faculty, dept, year, term }: { faculty: Faculty; dept: Dept; year: number; term: number }) {
+function TrackTermsPage({ faculty, dept, year, ti }: { faculty: Faculty; dept: Dept; year: number; ti: number }) {
     const tracks = bylawTracks(faculty.id, dept.id, year);
-    const base = `/academic/${faculty.id}/basic/${dept.id}/year/${year}/term/${term}`;
+    const track = tracks[ti];
+    const base = yearBase(faculty, dept, year);
+    if (!track) return <section className="azu-section azu-flow">
+        <Crumb items={acadCrumb(faculty, dept, year)} />
+        <Flow404 backTo={base} backLabel={`العودة لشعب ${YEAR_NAMES[year]}`} />
+    </section>;
+    const tbase = `${base}/track/${ti}`;
     return <section className="azu-section azu-flow">
-        <Crumb items={acadCrumb(faculty, dept, year, term)} />
-        <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year} — TERM {term}</div>
-        <h2 className="azu-title" dir="rtl">{dept.ar} — {YEAR_NAMES[year]} — {TERM_NAMES[term]}</h2>
-        {tracks.length === 0
-            ? <div className="azu-empty"><Icon name="books" size={30} /><p>قريبًا.</p></div>
-            : tracks.map((t, ti) => {
-                const courses = term === 1 ? t.t1 : t.t2;
-                return <div key={t.track} className="azu-tracksec">
-                    {tracks.length > 1 && <div className="azu-tracksec-name" dir="rtl">شعبة {t.track}</div>}
-                    <div className="azu-course-grid">
-                        {courses.map((c, ci) => <Link key={`${ti}-${ci}`} to={`${base}/course/${ti}/${ci}`} className="azu-coursebtn" dir="rtl">
-                            <span className="azu-coursebtn-name">{c[1]}</span>
-                            {c[0] && <span className="azu-coursebtn-code">{c[0]}</span>}
-                        </Link>)}
-                    </div>
-                </div>;
-            })}
+        <Crumb items={acadCrumb(faculty, dept, year, { ti, name: track.track })} />
+        <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year}</div>
+        <h2 className="azu-title" dir="rtl">شعبة {track.track} — {YEAR_NAMES[year]}</h2>
+        <div className="azu-termbtns" dir="rtl">
+            <Link to={`${tbase}/term/1`} className="azu-termbtn"><Icon name="books" size={20} /> {TERM_NAMES[1]}</Link>
+            <Link to={`${tbase}/term/2`} className="azu-termbtn"><Icon name="books" size={20} /> {TERM_NAMES[2]}</Link>
+        </div>
     </section>;
 }
 
-function CoursePage({ faculty, dept, year, term }: { faculty: Faculty; dept: Dept; year: number; term: number }) {
-    const prefix = `/academic/${faculty.id}/basic/${dept.id}/year/${year}/term/${term}/course/`;
+function termBase(faculty: Faculty, dept: Dept, year: number, tracks: BylawTrack[], ti?: number) {
+    const base = yearBase(faculty, dept, year);
+    return tracks.length > 1 ? `${base}/track/${ti ?? 0}/term` : `${base}/term`;
+}
+
+function TermPage({ faculty, dept, year, term, ti }: { faculty: Faculty; dept: Dept; year: number; term: number; ti?: number }) {
+    const tracks = bylawTracks(faculty.id, dept.id, year);
+    if (ti == null && tracks.length > 1) return <TrackChooser faculty={faculty} dept={dept} year={year} />;
+    const track = tracks[ti ?? 0];
+    const base = termBase(faculty, dept, year, tracks, ti);
+    if (!track) return <section className="azu-section azu-flow">
+        <Crumb items={acadCrumb(faculty, dept, year)} />
+        <Flow404 backTo={yearBase(faculty, dept, year)} backLabel={`العودة ل${YEAR_NAMES[year]}`} />
+    </section>;
+    const courses = term === 1 ? track.t1 : track.t2;
+    return <section className="azu-section azu-flow">
+        <Crumb items={acadCrumb(faculty, dept, year, tracks.length > 1 ? { ti: ti ?? 0, name: track.track } : undefined, term)} />
+        <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year} — TERM {term}</div>
+        <h2 className="azu-title" dir="rtl">{tracks.length > 1 ? `شعبة ${track.track} — ` : ''}{YEAR_NAMES[year]} — {TERM_NAMES[term]}</h2>
+        {courses.length === 0
+            ? <div className="azu-empty"><Icon name="books" size={30} /><p>قريبًا.</p></div>
+            : <div className="azu-course-grid">
+                {courses.map((c, ci) => <Link key={ci} to={`${base}/${term}/course/${ci}`} className="azu-coursebtn" dir="rtl">
+                    <span className="azu-coursebtn-name">{c[1]}</span>
+                    {c[0] && <span className="azu-coursebtn-code">{c[0]}</span>}
+                </Link>)}
+            </div>}
+    </section>;
+}
+
+function CoursePage({ faculty, dept, year, term, ti }: { faculty: Faculty; dept: Dept; year: number; term: number; ti?: number }) {
+    const tracks = bylawTracks(faculty.id, dept.id, year);
+    const trackIdx = tracks.length > 1 ? (ti ?? -1) : 0;
+    const track = tracks[trackIdx];
+    const base = termBase(faculty, dept, year, tracks, ti);
+    const prefix = `${base}/${term}/course/`;
     const path = window.location.pathname.replace(/^\/website/, '');
     const rest = path.startsWith(prefix) ? path.slice(prefix.length).replace(/\/$/, '') : '';
-    const [tiStr, ciStr] = rest.split('/');
-    const ti = Number(tiStr), ci = Number(ciStr);
-    const tracks = bylawTracks(faculty.id, dept.id, year);
-    const track = Number.isInteger(ti) ? tracks[ti] : undefined;
+    const ci = Number(rest);
     const course = track && Number.isInteger(ci) ? (term === 1 ? track.t1 : track.t2)[ci] : undefined;
     if (!course) return <section className="azu-section azu-flow">
-        <Crumb items={acadCrumb(faculty, dept, year, term)} />
-        <div className="azu-kicker">404</div>
-        <h2 className="azu-title">الصفحة غير موجودة.</h2>
-        <p><Link to={`/academic/${faculty.id}/basic/${dept.id}/year/${year}/term/${term}`} className="azu-btn azu-btn-outline">العودة لمواد {TERM_NAMES[term]}</Link></p>
+        <Crumb items={acadCrumb(faculty, dept, year)} />
+        <Flow404 backTo={`${base}/${term}`} backLabel={`العودة لمواد ${TERM_NAMES[term]}`} />
     </section>;
-    const files = COURSE_FILES[`${dept.id}/${year}/${term}/${ti}/${ci}`] ?? {};
+    const files = COURSE_FILES[`${dept.id}/${year}/${term}/${trackIdx}/${ci}`] ?? {};
     return <section className="azu-section azu-flow">
-        <Crumb items={acadCrumb(faculty, dept, year, term, course[1])} />
+        <Crumb items={acadCrumb(faculty, dept, year, tracks.length > 1 ? { ti: trackIdx, name: track.track } : undefined, term, course[1])} />
         <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year} — TERM {term}</div>
         <h2 className="azu-title" dir="rtl">{course[1]}</h2>
         {course[0] && <div dir="rtl"><span className="azu-coursebtn-code">{course[0]}</span></div>}
@@ -917,13 +972,28 @@ export function App() {
         ...PROGRAMS.map(p => <Route key={`${f.id}-special-${p.id}`} path={`/academic/${f.id}/special/${p.id}`} element={<ProgramPage faculty={f} program={p} />} />),
         ...deptsFor(f.id).flatMap(d => [
             <Route key={`${f.id}-${d.id}`} path={`/academic/${f.id}/basic/${d.id}`} element={<DepartmentPage faculty={f} dept={d} />} />,
-            ...[1, 2, 3, 4].flatMap(y => [
-                <Route key={`${f.id}-${d.id}-${y}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}`} element={<YearPage faculty={f} dept={d} year={y} />} />,
-                ...[1, 2].flatMap(t => [
-                    <Route key={`${f.id}-${d.id}-${y}-t${t}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/term/${t}`} element={<TermPage faculty={f} dept={d} year={y} term={t} />} />,
-                    <Route key={`${f.id}-${d.id}-${y}-t${t}-c`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/term/${t}/course/*`} element={<CoursePage faculty={f} dept={d} year={y} term={t} />} />,
-                ]),
-            ]),
+            ...[1, 2, 3, 4].flatMap(y => {
+                const tracks = bylawTracks(f.id, d.id, y);
+                if (tracks.length > 1) {
+                    return [
+                        <Route key={`${f.id}-${d.id}-${y}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}`} element={<YearPage faculty={f} dept={d} year={y} />} />,
+                        ...tracks.flatMap((_, ti) => [
+                            <Route key={`${f.id}-${d.id}-${y}-tr${ti}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/track/${ti}`} element={<TrackTermsPage faculty={f} dept={d} year={y} ti={ti} />} />,
+                            ...[1, 2].flatMap(t => [
+                                <Route key={`${f.id}-${d.id}-${y}-tr${ti}-t${t}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/track/${ti}/term/${t}`} element={<TermPage faculty={f} dept={d} year={y} term={t} ti={ti} />} />,
+                                <Route key={`${f.id}-${d.id}-${y}-tr${ti}-t${t}-c`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/track/${ti}/term/${t}/course/*`} element={<CoursePage faculty={f} dept={d} year={y} term={t} ti={ti} />} />,
+                            ]),
+                        ]),
+                    ];
+                }
+                return [
+                    <Route key={`${f.id}-${d.id}-${y}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}`} element={<YearPage faculty={f} dept={d} year={y} />} />,
+                    ...[1, 2].flatMap(t => [
+                        <Route key={`${f.id}-${d.id}-${y}-t${t}`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/term/${t}`} element={<TermPage faculty={f} dept={d} year={y} term={t} />} />,
+                        <Route key={`${f.id}-${d.id}-${y}-t${t}-c`} path={`/academic/${f.id}/basic/${d.id}/year/${y}/term/${t}/course/*`} element={<CoursePage faculty={f} dept={d} year={y} term={t} />} />,
+                    ]),
+                ];
+            }),
         ]),
     ]);
 

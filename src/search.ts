@@ -27,8 +27,11 @@ export const SEARCH_ITEMS: SearchItem[] = (() => {
                     const courses = term === 1 ? tr.t1 : tr.t2;
                     courses.forEach((c, ci) => {
                         const sub = `${d.ar} — ${YEAR_NAMES[y]} — ${TERM_NAMES[term]}${tracks.length > 1 ? ` — شعبة ${tr.track}` : ''}`;
+                        const cbase = tracks.length > 1
+                            ? `/academic/boys-cairo/basic/${d.id}/year/${y}/track/${ti}/term/${term}`
+                            : `/academic/boys-cairo/basic/${d.id}/year/${y}/term/${term}`;
                         push('المواد الدراسية', c[1], [c[0], sub].filter(Boolean).join(' · '),
-                            `/academic/boys-cairo/basic/${d.id}/year/${y}/term/${term}/course/${ti}/${ci}`,
+                            `${cbase}/course/${ci}`,
                             `مادة ${c[0] ?? ''}`);
                     });
                 }
