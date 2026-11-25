@@ -1,0 +1,9 @@
+name = "azu-science-agent"
+main = "src/index.js"
+compatibility_date = "2026-11-25"
+
+# Set the model key with: wrangler secret put GEMINI_API_KEY
+# (never commit the key to git)
+
+[vars]
+MODEL = "gemini-2.0-flash"

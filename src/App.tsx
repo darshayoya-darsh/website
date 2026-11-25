@@ -2,7 +2,7 @@ import React from 'react';
 import { FileCard, Link, NavLink, Route, Routes } from '@instinct/files';
 import heroPhoto from './photos/hero-building.jpg';
 import logoImg from './photos/azu-logo.jpg';
-import aboutPhoto from './photos/about-team.jpg';
+import aboutPhoto from './photos/founder-mustafa.jpg';
 
 /* ---------- Data ---------- */
 
@@ -826,10 +826,10 @@ export function App() {
                     <h2 className="azu-title">Built by Students. For Students.</h2>
                     <p className="azu-intro" dir="rtl">AZU Science منصة طلابية اتعملت عشان تسهّل الحياة الأكاديمية في كليات العلوم بجامعة الأزهر.</p>
                     <figure className="azu-about-photo">
-                        <img src={aboutPhoto} alt="مؤسسا منصة AZU Science" loading="lazy" />
+                        <img src={aboutPhoto} alt="مصطفى محمود، مؤسس منصة AZU Science" loading="lazy" />
                         <figcaption dir="rtl">
-                            <div className="azu-about-founders">مؤسسا المنصة</div>
-                            <div className="azu-about-names">مصطفى محمود، الفرقة الثانية فيزياء ورياضيات<br />عبدالرحمن محمد، الفرقة الثالثة كيمياء</div>
+                            <div className="azu-about-founders">مؤسس المنصة</div>
+                            <div className="azu-about-names">مصطفى محمود<br />الفرقة الثانية فيزياء ورياضيات</div>
                         </figcaption>
                     </figure>
                     <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالبين آمنوا بأن زملاءهم يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحملا على عاتقهما بناءها وجمع ما يحتاجه الطالب في مكان واحد، ليكون عملًا طلابيًا خالصًا: من الطلاب، وإليهم.</p>

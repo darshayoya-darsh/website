@@ -75,7 +75,7 @@ export function AgentChat() {
             const reply = await agentProvider.send([...messages, userMsg]);
             setMessages(m => [...m, { id: nextId('a'), role: 'assistant', text: reply.text, sources: reply.sources }]);
         } catch {
-            setMessages(m => [...m, { id: nextId('a'), role: 'assistant', text: 'حصل خطأ. جرب تاني.' }]);
+            setMessages(m => [...m, { id: nextId('a'), role: 'assistant', text: 'حدث خطأ. حاول مرة أخرى.' }]);
         } finally {
             setBusy(false);
         }
