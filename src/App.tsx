@@ -2,6 +2,7 @@ import React from 'react';
 import { FileCard, Link, NavLink, Route, Routes } from '@instinct/files';
 import heroPhoto from './photos/hero-building.jpg';
 import logoImg from './photos/azu-logo.jpg';
+import aboutPhoto from './photos/about-team.jpg';
 
 /* ---------- Data ---------- */
 
@@ -825,7 +826,20 @@ export function App() {
                     <p className="azu-note">تابع آخر الأخبار والإعلانات.</p>
                 </section>} />
                 <Route path="/community" element={<SimplePage kicker="COMMUNITY" title="Community" icon="users"><p>قريبًا.</p></SimplePage>} />
-                <Route path="/about" element={<SimplePage kicker="ABOUT US" title="Built by Students. For Students." icon="users"><p>AZU Science منصة طلابية اتعملت عشان تسهّل الحياة الأكاديمية في كليات العلوم بجامعة الأزهر.</p></SimplePage>} />
+                <Route path="/about" element={<section className="azu-section azu-flow">
+                    <Crumb items={[{ label: 'Home', to: '/' }, { label: 'About' }]} />
+                    <div className="azu-kicker">ABOUT US</div>
+                    <h2 className="azu-title">Built by Students. For Students.</h2>
+                    <p className="azu-intro" dir="rtl">AZU Science منصة طلابية اتعملت عشان تسهّل الحياة الأكاديمية في كليات العلوم بجامعة الأزهر.</p>
+                    <figure className="azu-about-photo">
+                        <img src={aboutPhoto} alt="مؤسسا منصة AZU Science" loading="lazy" />
+                        <figcaption dir="rtl">
+                            <div className="azu-about-founders">مؤسسا المنصة</div>
+                            <div className="azu-about-names">مصطفى محمود، الفرقة الثانية فيزياء ورياضيات<br />عبدالرحمن محمد، الفرقة الثالثة كيمياء</div>
+                        </figcaption>
+                    </figure>
+                    <p className="azu-intro azu-about-blurb" dir="rtl">من قلب كليات العلوم بجامعة الأزهر خرجت فكرة هذه المنصة على يد طالبين آمنوا بأن زملاءهم يستحقون محتوى أقرب إليهم وأسهل وصولًا، فحملا على عاتقهما بناءها وجمع ما يحتاجه الطالب في مكان واحد، ليكون عملًا طلابيًا خالصًا: من الطلاب، وإليهم.</p>
+                </section>} />
                 <Route path="/signin" element={<SimplePage kicker="STUDENT LOGIN" title="Sign In" icon="user"><p>قريبًا.</p></SimplePage>} />
             </Routes>
             <Footer />

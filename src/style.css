@@ -707,3 +707,27 @@ select.azu-input { cursor: pointer; }
     cursor: pointer; transition: all .2s ease;
 }
 .azu-calc-card .azu-btn-ghost:hover { border-color: #177a68; background: #f2fbf7; transform: translateY(-1px); }
+
+/* ===== About photo frame ===== */
+.azu-about-photo {
+    margin: 10px auto 4px;
+    max-width: 520px;
+    width: 100%;
+    padding: 12px;
+    background: #fdfaf3;
+    border: 1px solid rgba(201,162,75,.6);
+    border-radius: 20px;
+    box-shadow: 0 20px 44px rgba(12,58,52,.16);
+}
+.azu-about-photo img {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(12,58,52,.12);
+}
+@media (min-width: 768px) { .azu-about-photo { margin-top: 18px; } }
+
+.azu-about-photo figcaption { padding: 14px 6px 6px; text-align: center; }
+.azu-about-founders { font-size: 12px; letter-spacing: 2px; color: #c9a24b; font-weight: 700; margin-bottom: 6px; }
+.azu-about-names { font-size: 15px; color: #0c3a34; font-weight: 600; line-height: 1.9; }
+.azu-about-blurb { text-align: center; max-width: 560px; margin-left: auto; margin-right: auto; }
