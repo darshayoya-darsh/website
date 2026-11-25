@@ -6,7 +6,7 @@ import aboutPhoto from './photos/about-team.jpg';
 
 /* ---------- Data ---------- */
 
-import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, COMPARE_NOTE, COMPARE_TIPS, GRADES, gradeFromPercent, gradeFromGPA, MARK_SPLIT, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES, SOFTWARE_NOTE } from './data';
+import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, GRADES, gradeFromPercent, gradeFromGPA, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES } from './data';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software } from './data';
 
 type Faculty = { id: string; ar: string; en: string; city: string };
@@ -357,8 +357,6 @@ function SpecialPrograms({ faculty }: { faculty: Faculty }) {
                     <div className="azu-compare-verdict" dir="rtl">{c.verdict}</div>
                 </div>)}
             </Reveal>
-            <ul className="azu-tips" dir="rtl">{COMPARE_TIPS.map(t => <li key={t}>{t}</li>)}</ul>
-            <p className="azu-note">{COMPARE_NOTE}</p>
         </div>
     </section>;
 }
@@ -412,7 +410,6 @@ function DepartmentPage({ faculty, dept }: { faculty: Faculty; dept: Dept }) {
         <div className="azu-kicker">{dept.en.toUpperCase()}</div>
         <h2 className="azu-title" dir="rtl">قسم {dept.ar}</h2>
         {dept.intro && <p className="azu-intro" dir="rtl">{dept.intro}</p>}
-        {dept.importantNote && <div className="azu-callout" dir="rtl"><div className="azu-callout-title">ملاحظة مهمة</div><p>{dept.importantNote}</p></div>}
         <p className="azu-lead azu-lead-space">اختار السنة الدراسية.</p>
         <Reveal stagger className="azu-year-grid">
             {[1, 2, 3, 4].map(y => <Link key={y} to={`/academic/${faculty.id}/basic/${dept.id}/year/${y}`} className="azu-year">
@@ -453,14 +450,12 @@ function DepartmentPage({ faculty, dept }: { faculty: Faculty; dept: Dept }) {
                     <ul className="azu-ticks" dir="rtl">{c.items.map(x => <li key={x}>{x}</li>)}</ul>
                 </div>)}
             </Reveal>
-            {dept.careersNote && <p className="azu-note" dir="rtl">{dept.careersNote}</p>}
         </div>}
     </section>;
 }
 
 function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year: number }) {
     const specs = (dept.years[year] ?? []).filter(s => faculty.id === 'boys-cairo' || !ASTRO_TRACKS.includes(s));
-    const notes = (dept.yearNotes?.[year] ?? []).filter(n => faculty.id === 'boys-cairo' || !n.includes('الفلك والأرصاد'));
     const tracks = dept.tracks?.[year] ?? [];
     const groups = dept.yearGroups?.[year] ?? [];
     const showTerms = year === 1 && dept.terms;
@@ -472,7 +467,6 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
         {dept.provisional
             ? <div className="azu-empty"><Icon name={dept.icon} size={30} /><p>ده هيكل مبدئي للتجربة. تقسيمات قسم {dept.ar} — {YEAR_NAMES[year]} هتتأكد وتتضاف هنا.</p></div>
             : <>
-                {notes.length > 0 && <ul className="azu-ticks azu-intro" dir="rtl">{notes.map(n => <li key={n}>{n}</li>)}</ul>}
                 {showTerms && <div className="azu-terms">
                     {dept.terms!.map((t: Term) => <div key={t.title} className="azu-term">
                         <div className="azu-term-title" dir="rtl">{t.title}</div>
@@ -484,7 +478,6 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
                         </ol>
                     </div>)}
                 </div>}
-                {showTerms && dept.quranNote && <p className="azu-note" dir="rtl">{dept.quranNote}</p>}
                 {tracks.length > 0 && <Reveal stagger className="azu-track-grid">
                     {tracks.map((t: Track) => <div key={t.name} className="azu-track">
                         <div className="azu-track-name" dir="rtl">{t.name}</div>
@@ -494,7 +487,6 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
                             <div className="azu-minihead" dir="rtl">تقدر تشتغل في</div>
                             <ul className="azu-ticks" dir="rtl">{t.careers.map(x => <li key={x}>{x}</li>)}</ul>
                         </>}
-                        {t.note && <p className="azu-track-note" dir="rtl">{t.note}</p>}
                     </div>)}
                 </Reveal>}
                 {groups.map((g: ListSection) => <div key={g.title} className="azu-block">
@@ -503,7 +495,6 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
                         {g.items.map(s => <div key={s} className="azu-spec" dir="rtl"><Icon name="spark" size={16} /> {s}</div>)}
                     </Reveal>
                 </div>)}
-                {groups.length > 0 && <p className="azu-note" dir="rtl">كل قسم ليه مجاله، لكن تقدر تشتغل في أي مجال من مجالات الأحياء.</p>}
                 {specs.length > 0 && tracks.length === 0 && <>
                     {!groups.length && <p className="azu-lead azu-lead-space">التخصصات المتاحة في {YEAR_NAMES[year]}:</p>}
                     {specs.some(hasDetails)
@@ -532,7 +523,7 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
                         </Reveal>}
                     <p className="azu-note">محتوى كل تخصص — قريبًا.</p>
                 </>}
-                {specs.length === 0 && !showTerms && tracks.length === 0 && groups.length === 0 && notes.length === 0 &&
+                {specs.length === 0 && !showTerms && tracks.length === 0 && groups.length === 0 &&
                     <div className="azu-empty"><Icon name="books" size={30} /><p>مواد {YEAR_NAMES[year]} — قريبًا.</p></div>}
             </>}
     </section>;
@@ -696,7 +687,6 @@ function Calculator() {
                     </tbody>
                 </table>
             </div>
-            <p className="azu-note" dir="rtl">توزيع درجات المقرر: {MARK_SPLIT.map(m => `${m.label} ${m.pct}`).join(' — ')}. الحد الأدنى للنجاح في المقرر: D (1.0)، والحد الأدنى للمعدل التراكمي للتخرج: 2.0.</p>
         </Reveal>
 
         <div className="azu-notice">
@@ -733,7 +723,6 @@ function SoftwareHub() {
                 <span className="azu-card-arrow"><Icon name="arrow" size={15} /></span>
             </Link>)}
         </Reveal>
-        <div className="azu-notice"><span className="azu-tag">روابط رسمية</span><p>{SOFTWARE_NOTE}</p></div>
     </section>;
 }
 
