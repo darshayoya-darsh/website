@@ -5,8 +5,8 @@ import logoImg from './photos/azu-logo.jpg';
 
 /* ---------- Data ---------- */
 
-import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, COMPARE_NOTE, COMPARE_TIPS } from './data';
-import type { Dept, Program, SpecDetail, Track, Term, ListSection } from './data';
+import { DEPARTMENTS, PROGRAMS, COMPARE_PROGRAMS, COMPARE_NOTE, COMPARE_TIPS, GRADES, gradeFromPercent, gradeFromGPA, MARK_SPLIT, CALC_NOTE, SOFTWARE, SOFTWARE_DISCIPLINES, SOFTWARE_NOTE } from './data';
+import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software } from './data';
 
 type Faculty = { id: string; ar: string; en: string; city: string };
 
@@ -58,6 +58,11 @@ function Icon({ name, size = 24 }: { name: string; size?: number }) {
         case 'globe': return <svg {...p}><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z" /></svg>;
         case 'search': return <svg {...p}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>;
         case 'clock': return <svg {...p}><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
+        case 'calc': return <svg {...p}><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8" /><path d="M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2" /></svg>;
+        case 'target': return <svg {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" /></svg>;
+        case 'code': return <svg {...p}><path d="M8 6l-6 6 6 6" /><path d="M16 6l6 6-6 6" /><path d="M13 4l-2 16" /></svg>;
+        case 'extlink': return <svg {...p}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6" /><path d="M10 14L21 3" /></svg>;
+        case 'download': return <svg {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>;
         case 'check': return <svg {...p}><path d="M20 6L9 17l-5-5" /></svg>;
         default: return null;
     }
@@ -96,6 +101,7 @@ function TopBar() {
         <nav className="azu-nav" aria-label="Main">
             <NavLink to="/" end>Home</NavLink>
             <NavLink to="/academic">Academic</NavLink>
+            <NavLink to="/tools">Tools</NavLink>
             <NavLink to="/research">Research</NavLink>
             <NavLink to="/opportunities">Opportunities</NavLink>
             <NavLink to="/news">News</NavLink>
@@ -167,6 +173,7 @@ const CATEGORIES = [
     { to: '/research', icon: 'microscope', title: 'Research', text: 'Discover research opportunities, projects and scientific resources.' },
     { to: '/opportunities', icon: 'briefcase', title: 'Opportunities', text: 'Internships, scholarships, competitions and scientific events.' },
     { to: '/news', icon: 'megaphone', title: 'News', text: 'Latest announcements, faculty news and upcoming events.' },
+    { to: '/tools', icon: 'calc', title: 'Tools', text: 'Academic calculator, scientific software hub and smart student services.' },
 ];
 
 function Home() {
@@ -529,6 +536,239 @@ function YearPage({ faculty, dept, year }: { faculty: Faculty; dept: Dept; year:
 
 /* ---------- Simple pages ---------- */
 
+/* ---------- Student Tools ---------- */
+
+function ToolsHub() {
+    const ready = [
+        { to: '/tools/calculator', icon: 'calc', title: 'الحاسبة الأكاديمية', en: 'Academic Calculator', text: 'احسب معدلك الفصلي والتراكمي وتقديرك المتوقع، واعرف الدرجات المطلوبة للوصول للتقدير اللي بتستهدفه.' },
+        { to: '/tools/software', icon: 'code', title: 'مكتبة البرامج العلمية', en: 'Scientific Software Hub', text: 'دليل البرامج المستخدمة في كل تخصص: تعريفها واستخداماتها ومتطلبات تشغيلها وروابطها الرسمية ومصادر تعلمها.' },
+    ];
+    const soon = ['التقويم الجامعي الموحد', 'المنظم الدراسي', 'بنك المسائل العلمية'];
+    return <section className="azu-section azu-flow">
+        <Crumb items={[{ label: 'Home', to: '/' }, { label: 'Tools' }]} />
+        <div className="azu-kicker">STUDENT TOOLS</div>
+        <h2 className="azu-title">أدوات الطالب</h2>
+        <p className="azu-lead">خدمات ذكية تساعدك في رحلتك الدراسية — ولسه فيه أدوات جاية حسب خارطة طريق المنصة.</p>
+        <Reveal stagger className="azu-prog-grid">
+            {ready.map(t => <Link key={t.to} to={t.to} className="azu-prog">
+                <span className="azu-prog-icon"><Icon name={t.icon} size={22} /></span>
+                <span className="azu-prog-names">
+                    <span className="azu-prog-ar" dir="rtl">{t.title}</span>
+                    <span className="azu-prog-en">{t.en}</span>
+                </span>
+                <span className="azu-prog-facts">{t.text}</span>
+                <span className="azu-card-arrow"><Icon name="arrow" size={15} /></span>
+            </Link>)}
+        </Reveal>
+        <div className="azu-notice">
+            <span className="azu-tag">قريبًا</span>
+            <p>حسب خارطة الطريق: {soon.join(' · ')} — الأدوات دي محتاجة بيانات الكليات (المواعيد والمقررات) وهتتضاف أول ما تكتمل.</p>
+        </div>
+    </section>;
+}
+
+/* --- Academic Calculator --- */
+
+type CourseRow = { name: string; hours: string; letter: string };
+
+function gradeOf(letter: string) { return GRADES.find(g => g.letter === letter) || GRADES[GRADES.length - 1]; }
+
+function Calculator() {
+    const [tab, setTab] = React.useState<'gpa' | 'target'>('gpa');
+    const [rows, setRows] = React.useState<CourseRow[]>([
+        { name: '', hours: '3', letter: 'B' },
+        { name: '', hours: '3', letter: 'B' },
+        { name: '', hours: '2', letter: 'C+' },
+    ]);
+    const [priorHours, setPriorHours] = React.useState('');
+    const [priorGpa, setPriorGpa] = React.useState('');
+    const [tCgpa, setTCgpa] = React.useState('');
+    const [tDone, setTDone] = React.useState('');
+    const [tPlanned, setTPlanned] = React.useState('18');
+    const [tTarget, setTTarget] = React.useState('3.7');
+
+    const setRow = (i: number, patch: Partial<CourseRow>) => setRows(rs => rs.map((r, j) => j === i ? { ...r, ...patch } : r));
+
+    const valid = rows.filter(r => parseFloat(r.hours) > 0);
+    const semHours = valid.reduce((s, r) => s + parseFloat(r.hours), 0);
+    const semPoints = valid.reduce((s, r) => s + parseFloat(r.hours) * gradeOf(r.letter).pts, 0);
+    const gpa = semHours > 0 ? semPoints / semHours : 0;
+    const ph = parseFloat(priorHours) || 0;
+    const pg = parseFloat(priorGpa) || 0;
+    const hasPrior = ph > 0 && pg > 0;
+    const cgpa = hasPrior && semHours > 0 ? (semPoints + pg * ph) / (semHours + ph) : hasPrior ? pg : gpa;
+
+    const d = parseFloat(tDone) || 0;
+    const g = parseFloat(tCgpa) || 0;
+    const p = parseFloat(tPlanned) || 0;
+    const t = parseFloat(tTarget) || 0;
+    const needed = d >= 0 && g >= 0 && p > 0 ? (t * (d + p) - g * d) / p : NaN;
+
+    const tabBtn = (id: 'gpa' | 'target', label: string, icon: string) =>
+        <button type="button" className={`azu-tab${tab === id ? ' is-on' : ''}`} onClick={() => setTab(id)}>
+            <Icon name={icon} size={16} /> {label}
+        </button>;
+
+    return <section className="azu-section azu-flow">
+        <Crumb items={[{ label: 'Home', to: '/' }, { label: 'Tools', to: '/tools' }, { label: 'الحاسبة الأكاديمية' }]} />
+        <div className="azu-kicker">ACADEMIC CALCULATOR</div>
+        <h2 className="azu-title">الحاسبة الأكاديمية</h2>
+        <p className="azu-lead">حاسبة GPA والتقديرات لبرامج الساعات المعتمدة — بدون تسجيل دخول وبياناتك مبتتسجلش.</p>
+
+        <div className="azu-tabs">{tabBtn('gpa', 'حساب المعدل', 'calc')}{tabBtn('target', 'حاسبة الهدف', 'target')}</div>
+
+        {tab === 'gpa' && <>
+            <div className="azu-calc-card">
+                <h3>مقررات الفصل</h3>
+                <div className="azu-calc-rows">
+                    {rows.map((r, i) => <div key={i} className="azu-calc-row">
+                        <input className="azu-input" placeholder={`مقرر ${i + 1}`} value={r.name} onChange={e => setRow(i, { name: e.target.value })} />
+                        <input className="azu-input azu-input-num" type="number" min="1" max="12" step="1" value={r.hours} title="الساعات" onChange={e => setRow(i, { hours: e.target.value })} />
+                        <select className="azu-input" value={r.letter} title="التقدير" onChange={e => setRow(i, { letter: e.target.value })}>
+                            {GRADES.map(gr => <option key={gr.letter} value={gr.letter}>{gr.letter} — {gr.ar}</option>)}
+                        </select>
+                        <button type="button" className="azu-calc-del" aria-label="حذف" onClick={() => setRows(rs => rs.filter((_, j) => j !== i))}>×</button>
+                    </div>)}
+                </div>
+                <button type="button" className="azu-btn-ghost" onClick={() => setRows(rs => [...rs, { name: '', hours: '3', letter: 'B' }])}>+ أضف مقرر</button>
+            </div>
+
+            <div className="azu-calc-card">
+                <h3>لو عندك معدل سابق <small>(اختياري)</small></h3>
+                <div className="azu-calc-grid2">
+                    <label className="azu-field">الساعات المكتملة<input className="azu-input" type="number" min="0" value={priorHours} onChange={e => setPriorHours(e.target.value)} placeholder="مثال: 60" /></label>
+                    <label className="azu-field">المعدل التراكمي الحالي<input className="azu-input" type="number" min="0" max="4" step="0.01" value={priorGpa} onChange={e => setPriorGpa(e.target.value)} placeholder="مثال: 2.85" /></label>
+                </div>
+            </div>
+
+            <div className="azu-calc-result">
+                <div className="azu-calc-stat"><span>معدل الفصل (GPA)</span><strong>{semHours ? gpa.toFixed(2) : '—'}</strong><small>{semHours ? gradeFromGPA(gpa) : ''}</small></div>
+                <div className="azu-calc-stat"><span>ساعات الفصل</span><strong>{semHours || '—'}</strong><small>ساعة معتمدة</small></div>
+                <div className="azu-calc-stat"><span>المعدل التراكمي</span><strong>{(hasPrior || semHours) ? cgpa.toFixed(2) : '—'}</strong><small>{(hasPrior || semHours) ? gradeFromGPA(cgpa) : ''}</small></div>
+            </div>
+        </>}
+
+        {tab === 'target' && <>
+            <div className="azu-calc-card">
+                <h3>عايز توصل لتقدير معين؟</h3>
+                <div className="azu-calc-grid2">
+                    <label className="azu-field">المعدل التراكمي الحالي<input className="azu-input" type="number" min="0" max="4" step="0.01" value={tCgpa} onChange={e => setTCgpa(e.target.value)} placeholder="مثال: 2.50" /></label>
+                    <label className="azu-field">الساعات المكتملة<input className="azu-input" type="number" min="0" value={tDone} onChange={e => setTDone(e.target.value)} placeholder="مثال: 60" /></label>
+                    <label className="azu-field">الساعات القادمة<input className="azu-input" type="number" min="1" value={tPlanned} onChange={e => setTPlanned(e.target.value)} placeholder="مثال: 18" /></label>
+                    <label className="azu-field">التقدير المستهدف
+                        <select className="azu-input" value={tTarget} onChange={e => setTTarget(e.target.value)}>
+                            <option value="4">ممتاز+ (4.00)</option>
+                            <option value="3.7">ممتاز (3.70)</option>
+                            <option value="2.7">جيد جدًا (2.70)</option>
+                            <option value="2">جيد (2.00)</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+            {p > 0 && g >= 0 && t > 0 && (tCgpa !== '' || tDone !== '') && <div className="azu-calc-result">
+                <div className="azu-calc-stat"><span>المعدل المطلوب في الساعات القادمة</span><strong>{isFinite(needed) ? needed.toFixed(2) : '—'}</strong><small>{isFinite(needed) && needed <= 4 && needed >= 0 ? gradeFromGPA(needed) : ''}</small></div>
+                <div className="azu-calc-msg">
+                    {!isFinite(needed) ? 'أدخل بياناتك عشان نحسب.' :
+                        needed > 4 ? 'الهدف غير ممكن رياضيًا في الساعات دي — حتى لو جبت A في كل المواد. جرّب تزود عدد الساعات أو تخفض الهدف.' :
+                        needed <= 0 ? 'مبروك — وصلت للهدف بالفعل! حافظ على معدلك.' :
+                        needed > 3.3 ? 'هدف طموح — محتاج تقدير قريب من A في معظم المواد القادمة. خطط لمذاكرتك كويس.' :
+                        'هدف واقعي وقابل للتحقيق — ركّز على المواد الأكبر ساعات لأنها الأكثر تأثيرًا في المعدل.'}
+                </div>
+            </div>}
+        </>}
+
+        <Reveal className="azu-speccard">
+            <h3>سلم التقديرات المعتمد</h3>
+            <div className="azu-calc-table-wrap">
+                <table className="azu-calc-table">
+                    <thead><tr><th>الرمز</th><th>النقاط</th><th>النسبة</th><th>التقدير</th></tr></thead>
+                    <tbody>
+                        {GRADES.map(gr => <tr key={gr.letter}>
+                            <td><strong>{gr.letter}</strong></td>
+                            <td>{gr.pts.toFixed(1)}</td>
+                            <td>{gr.letter === 'F' ? 'أقل من 50%' : gr.min === 90 ? '90 – 100%' : `${gr.min}% – أقل من ${GRADES[GRADES.indexOf(gr) - 1].min}%`}</td>
+                            <td>{gr.ar}</td>
+                        </tr>)}
+                    </tbody>
+                </table>
+            </div>
+            <p className="azu-note" dir="rtl">توزيع درجات المقرر: {MARK_SPLIT.map(m => `${m.label} ${m.pct}`).join(' — ')}. الحد الأدنى للنجاح في المقرر: D (1.0)، والحد الأدنى للمعدل التراكمي للتخرج: 2.0.</p>
+        </Reveal>
+
+        <div className="azu-notice">
+            <span className="azu-tag">تنبيه</span>
+            <p>{CALC_NOTE}</p>
+        </div>
+    </section>;
+}
+
+/* --- Scientific Software Hub --- */
+
+function SoftwareHub() {
+    const [disc, setDisc] = React.useState<string>('all');
+    const list = SOFTWARE.filter(s => disc === 'all' || s.disc === disc);
+    return <section className="azu-section azu-flow">
+        <Crumb items={[{ label: 'Home', to: '/' }, { label: 'Tools', to: '/tools' }, { label: 'مكتبة البرامج العلمية' }]} />
+        <div className="azu-kicker">SCIENTIFIC SOFTWARE HUB</div>
+        <h2 className="azu-title">مكتبة البرامج العلمية</h2>
+        <p className="azu-lead">البرامج اللي محتاجها في تخصصك: تعريفها واستخداماتها ومتطلباتها وروابطها الرسمية ومصادر تعلمها.</p>
+        <div className="azu-filters">
+            <button type="button" className={`azu-filter${disc === 'all' ? ' is-on' : ''}`} onClick={() => setDisc('all')}>كل التخصصات</button>
+            {SOFTWARE_DISCIPLINES.map(d => <button key={d.id} type="button" className={`azu-filter${disc === d.id ? ' is-on' : ''}`} onClick={() => setDisc(d.id)}>
+                <Icon name={d.icon} size={15} /> {d.ar}
+            </button>)}
+        </div>
+        <Reveal stagger className="azu-prog-grid">
+            {list.map(s => <Link key={s.id} to={`/tools/software/${s.id}`} className="azu-prog">
+                <span className="azu-prog-icon"><Icon name={s.icon} size={22} /></span>
+                <span className="azu-prog-names">
+                    <span className="azu-prog-ar">{s.name}</span>
+                    <span className="azu-prog-en">{SOFTWARE_DISCIPLINES.find(d => d.id === s.disc)?.ar}</span>
+                </span>
+                <span className="azu-prog-facts">{s.about}</span>
+                <span className="azu-card-arrow"><Icon name="arrow" size={15} /></span>
+            </Link>)}
+        </Reveal>
+        <div className="azu-notice"><span className="azu-tag">روابط رسمية</span><p>{SOFTWARE_NOTE}</p></div>
+    </section>;
+}
+
+function SoftwarePage({ soft }: { soft: Software }) {
+    const d = SOFTWARE_DISCIPLINES.find(x => x.id === soft.disc);
+    return <section className="azu-section azu-flow">
+        <Crumb items={[{ label: 'Home', to: '/' }, { label: 'Tools', to: '/tools' }, { label: 'مكتبة البرامج', to: '/tools/software' }, { label: soft.name }]} />
+        <div className="azu-kicker">SOFTWARE — {d?.ar}</div>
+        <h2 className="azu-title">{soft.name}</h2>
+        <Reveal stagger className="azu-progstats">
+            <div className="azu-progstat"><Icon name={d?.icon || 'code'} size={22} /><div className="azu-progstat-label" dir="rtl">التخصص</div><div className="azu-progstat-value" dir="rtl">{d?.ar}</div></div>
+            <div className="azu-progstat"><Icon name="extlink" size={22} /><div className="azu-progstat-label">الموقع الرسمي</div><div className="azu-progstat-value" dir="ltr">{soft.siteLabel}</div></div>
+        </Reveal>
+        <p className="azu-intro" dir="rtl">{soft.about}</p>
+        <div className="azu-block">
+            <div className="azu-minihead" dir="rtl">أهم الاستخدامات</div>
+            <ul className="azu-ticks" dir="rtl">{soft.uses.map(u => <li key={u}>{u}</li>)}</ul>
+        </div>
+        <div className="azu-block">
+            <div className="azu-minihead" dir="rtl">التخصصات اللي محتاجاه</div>
+            <div className="azu-chip-grid">{soft.specs.map(sp => <span key={sp} className="azu-chip2" dir="rtl">{sp}</span>)}</div>
+        </div>
+        <div className="azu-block">
+            <div className="azu-minihead" dir="rtl">متطلبات التشغيل</div>
+            <p className="azu-note" dir="rtl">{soft.requirements}</p>
+        </div>
+        <div className="azu-block">
+            <div className="azu-minihead" dir="rtl">مصادر التعلم</div>
+            <ul className="azu-ticks azu-links-list">{soft.learn.map(l => <li key={l.url}>
+                <a href={l.url} target="_blank" rel="noreferrer">{l.label} <Icon name="extlink" size={13} /></a>
+            </li>)}</ul>
+        </div>
+        <div className="azu-backrow">
+            <a className="azu-btn azu-btn-primary" href={soft.site} target="_blank" rel="noreferrer"><Icon name="extlink" size={15} /> الموقع الرسمي</a>
+            <Link to="/tools/software" className="azu-btn azu-btn-outline"><Icon name="back" size={15} /> كل البرامج</Link>
+        </div>
+    </section>;
+}
+
 function SimplePage({ kicker, title, icon, children }: { kicker: string; title: string; icon: string; children: React.ReactNode }) {
     return <section className="azu-section azu-flow">
         <Crumb items={[{ label: 'Home', to: '/' }, { label: title }]} />
@@ -559,6 +799,10 @@ export function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/academic" element={<Academic />} />
                 {academicRoutes}
+                <Route path="/tools" element={<ToolsHub />} />
+                <Route path="/tools/calculator" element={<Calculator />} />
+                <Route path="/tools/software" element={<SoftwareHub />} />
+                {SOFTWARE.map(s => <Route key={s.id} path={`/tools/software/${s.id}`} element={<SoftwarePage soft={s} />} />)}
                 <Route path="/research" element={<SimplePage kicker="RESEARCH" title="Research" icon="microscope"><p>فرص البحث والمشاريع العلمية والمصادر لكل الأقسام — القسم ده بيتجهز للنسخة الجاية.</p></SimplePage>} />
                 <Route path="/opportunities" element={<SimplePage kicker="OPPORTUNITIES" title="Opportunities" icon="briefcase"><p>التدريبات والمنح والمسابقات والفعاليات العلمية — أول ما الفرص تتجمّع هتظهر هنا.</p></SimplePage>} />
                 <Route path="/news" element={<section className="azu-section azu-flow">

@@ -279,3 +279,193 @@ export const COMPARE_TIPS = [
     'مهتم بالذكاء الاصطناعي وتحليل البيانات؟ ذكاء اصطناعي (برامج مميزة).',
     'مهتم بالدوائر والأنظمة والهاردوير؟ هندسة الحاسوب (قسم هندسة).',
 ];
+
+/* ================= Student Tools: Academic Calculator ================= */
+
+export type Grade = { ar: string; letter: string; pts: number; min: number };
+
+// نظام التقديرات وفق النموذج المعتمد في لوائح الساعات المعتمدة لكليات العلوم المصرية
+// (لائحة كلية العلوم جامعة أسيوط بنظام الساعات المعتمدة وتعديلاتها — مادة 18)
+export const GRADES: Grade[] = [
+    { ar: 'ممتاز', letter: 'A', pts: 4.0, min: 90 },
+    { ar: 'ممتاز', letter: 'A-', pts: 3.7, min: 85 },
+    { ar: 'جيد جدًا', letter: 'B+', pts: 3.3, min: 80 },
+    { ar: 'جيد جدًا', letter: 'B', pts: 3.0, min: 75 },
+    { ar: 'جيد جدًا', letter: 'B-', pts: 2.7, min: 70 },
+    { ar: 'جيد', letter: 'C+', pts: 2.3, min: 65 },
+    { ar: 'جيد', letter: 'C', pts: 2.0, min: 60 },
+    { ar: 'مقبول', letter: 'C-', pts: 1.7, min: 57 },
+    { ar: 'مقبول', letter: 'D+', pts: 1.3, min: 55 },
+    { ar: 'مقبول', letter: 'D', pts: 1.0, min: 50 },
+    { ar: 'راسب', letter: 'F', pts: 0.0, min: 0 },
+];
+
+export function gradeFromPercent(pct: number): Grade {
+    for (const g of GRADES) if (pct >= g.min) return g;
+    return GRADES[GRADES.length - 1];
+}
+
+export function gradeFromGPA(gpa: number): string {
+    if (gpa >= 3.7) return 'ممتاز';
+    if (gpa >= 2.7) return 'جيد جدًا';
+    if (gpa >= 2.0) return 'جيد';
+    if (gpa >= 1.0) return 'مقبول';
+    return 'دون الحد الأدنى';
+}
+
+export const MARK_SPLIT = [
+    { label: 'أعمال السنة', pct: '20%' },
+    { label: 'امتحان منتصف الفصل', pct: '20%' },
+    { label: 'الامتحان الشفوي', pct: '10%' },
+    { label: 'الامتحان النهائي', pct: '50%' },
+];
+
+export const CALC_NOTE = 'النتائج استرشادية وليست بديلًا عن النتائج الرسمية. الحاسبة مبنية على النموذج المعتمد في لوائح الساعات المعتمدة لكليات العلوم المصرية، وقد تختلف تفاصيل لائحة كليتك أو برنامجك — راجع الشئون الأكاديمية بالكلية للتأكد.';
+
+/* ================= Student Tools: Scientific Software Hub ================= */
+
+export type Software = {
+    id: string; name: string; disc: string; icon: string;
+    about: string; uses: string[]; specs: string[]; requirements: string;
+    site: string; siteLabel: string; learn: { label: string; url: string }[];
+};
+
+export const SOFTWARE_DISCIPLINES: { id: string; ar: string; icon: string }[] = [
+    { id: 'physics', ar: 'الفيزياء', icon: 'atom' },
+    { id: 'astronomy', ar: 'الفلك والأرصاد', icon: 'globe' },
+    { id: 'math-cs', ar: 'الرياضيات وعلوم الحاسب', icon: 'sigma' },
+    { id: 'chemistry', ar: 'الكيمياء', icon: 'flask' },
+    { id: 'geology', ar: 'الجيولوجيا', icon: 'rock' },
+    { id: 'biology', ar: 'البيولوجي', icon: 'leaf' },
+];
+
+export const SOFTWARE: Software[] = [
+    {
+        id: 'matlab', name: 'MATLAB', disc: 'physics', icon: 'sigma',
+        about: 'بيئة حسابية وبرمجية للحوسبة العددية وتحليل البيانات والمحاكاة، من أوسع الأدوات استخدامًا في الفيزياء والهندسة والرياضيات التطبيقية.',
+        uses: ['الحسابات العددية وحل المعادلات', 'تحليل البيانات ورسم المنحنيات', 'محاكاة الأنظمة الفيزيائية', 'معالجة الإشارات والصور'],
+        specs: ['الفيزياء', 'الرياضيات', 'فلك وأرصاد', 'البرامج المتميزة الفيزيائية'],
+        requirements: 'Windows / macOS / Linux — يُفضل 8GB ذاكرة أو أكثر ومساحة تخزين مناسبة للحزم. راجع الموقع الرسمي للمتطلبات الدقيقة لكل إصدار.',
+        site: 'https://www.mathworks.com/products/matlab.html', siteLabel: 'mathworks.com',
+        learn: [{ label: 'MATLAB Academy — كورسات مجانية ذاتية', url: 'https://matlabacademy.mathworks.com' }],
+    },
+    {
+        id: 'mathematica', name: 'Wolfram Mathematica', disc: 'physics', icon: 'sigma',
+        about: 'نظام حوسبة رمزية وعددية قوي يجمع الرياضيات الرمزية والرسوميات والبرمجة في بيئة واحدة، معتمد في البحث العلمي والتدريس.',
+        uses: ['الرياضيات الرمزية والاشتقاق والتكامل', 'حل المعادلات التفاضلية', 'الرسوميات العلمية المتقدمة', 'النمذجة والمحاكاة'],
+        specs: ['الفيزياء', 'الرياضيات', 'الفيزياء النظرية والرياضيات البحتة'],
+        requirements: 'Windows / macOS / Linux — ترخيص مدفوع (توجد نسخة مجانية مخففة Wolfram Engine للمطورين).',
+        site: 'https://www.wolfram.com/mathematica/', siteLabel: 'wolfram.com',
+        learn: [{ label: 'Wolfram U — مسارات تعلم رسمية', url: 'https://www.wolfram.com/wolfram-u/' }],
+    },
+    {
+        id: 'comsol', name: 'COMSOL Multiphysics', disc: 'physics', icon: 'atom',
+        about: 'منصة محاكاة متعددة الفيزياء (Multiphysics) لنمذجة الظواهر الفيزيائية المترابطة بالعناصر المحدودة: حرارة، كهرومغناطيسية، ميكانيكا، موائع.',
+        uses: ['محاكاة الظواهر الفيزيائية المترابطة', 'النمذجة بالعناصر المحدودة (FEM)', 'تصميم واختبار النماذج قبل التنفيذ', 'أبحاث الفيزياء التطبيقية'],
+        specs: ['الفيزياء', 'الفيزياء التطبيقية', 'البحث العلمي'],
+        requirements: 'Windows / macOS / Linux — ترخيص مدفوع؛ يتطلب جهازًا بمواصفات جيدة للنماذج الكبيرة.',
+        site: 'https://www.comsol.com', siteLabel: 'comsol.com',
+        learn: [{ label: 'COMSOL Learning Center — مقالات وفيديوهات تعليمية', url: 'https://www.comsol.com/learning-center' }],
+    },
+    {
+        id: 'stellarium', name: 'Stellarium', disc: 'astronomy', icon: 'globe',
+        about: 'قبة سماوية افتراضية مفتوحة المصدر تعرض سماء واقعية ثلاثية الأبعاد كما تراها بالعين المجردة أو المنظار أو التلسكوب، من أي مكان وزمان.',
+        uses: ['استكشاف النجوم والكوكبات والكواكب', 'محاكاة السماء في أي تاريخ وموقع', 'التخطيط للرصد الفلكي', 'التعلم الذاتي للفلك العملي'],
+        specs: ['فلك وأرصاد', 'الفيزياء', 'أندية الفلك الطلابية'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر، وخفيف نسبيًا؛ توجد نسخة ويب للتجربة السريعة.',
+        site: 'https://stellarium.org/', siteLabel: 'stellarium.org',
+        learn: [{ label: 'الموقع الرسمي — التحميل ودليل الاستخدام', url: 'https://stellarium.org/' }],
+    },
+    {
+        id: 'ds9', name: 'SAOImage DS9', disc: 'astronomy', icon: 'globe',
+        about: 'الأداة القياسية في الفلك الاحترافي لعرض وتحليل الصور الفلكية بصيغة FITS، من مركز هارفارد-سميثسونيان للفيزياء الفلكية.',
+        uses: ['عرض وتحليل صور FITS الفلكية', 'القياسات الضوئية (Photometry)', 'تحليل بيانات التلسكوبات والمسوح الفلكية', 'معالجة البيانات الرصدية'],
+        specs: ['فلك وأرصاد', 'البحث الفلكي', 'تحليل البيانات الرصدية'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر.',
+        site: 'https://ds9.si.edu', siteLabel: 'ds9.si.edu',
+        learn: [{ label: 'الموقع الرسمي — التحميل والتوثيق', url: 'https://ds9.si.edu' }],
+    },
+    {
+        id: 'geogebra', name: 'GeoGebra', disc: 'math-cs', icon: 'sigma',
+        about: 'منصة رياضيات ديناميكية مجانية تجمع الهندسة والجبر والجداول والتفاضل والإحصاء في بيئة تفاعلية واحدة، مثالية للفهم والتدريس.',
+        uses: ['الهندسة التفاعلية والرسم البياني', 'استكشاف الدوال والتفاضل والتكامل', 'بناء نماذج ومحاكاة رياضية', 'إنشاء أنشطة تعليمية تفاعلية'],
+        specs: ['الرياضيات', 'الإعداد للتدريس', 'كل تخصص يدرس رياضيات'],
+        requirements: 'يعمل من المتصفح مباشرة، وتوجد تطبيقات لكل الأنظمة — مجاني تمامًا.',
+        site: 'https://www.geogebra.org/', siteLabel: 'geogebra.org',
+        learn: [{ label: 'الموقع الرسمي — الأدوات والموارد الجاهزة', url: 'https://www.geogebra.org/' }],
+    },
+    {
+        id: 'python', name: 'Python', disc: 'math-cs', icon: 'code',
+        about: 'لغة البرمجة الأولى في العلوم: سهلة التعلم وبمكتبات ضخمة للحوسبة العلمية وتحليل البيانات والذكاء الاصطناعي (NumPy, SciPy, pandas, Matplotlib).',
+        uses: ['الحوسبة العلمية وتحليل البيانات', 'أتمتة المعامل والتجارب', 'التعلم الآلي والذكاء الاصطناعي', 'الرسوميات العلمية'],
+        specs: ['علوم الحاسب', 'الرياضيات', 'كل التخصصات البحثية', 'البرامج المتميزة'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر؛ يُنصح بتوزيعة مثل Anaconda للعلوم.',
+        site: 'https://www.python.org/', siteLabel: 'python.org',
+        learn: [{ label: 'الجولة الرسمية في بايثون (The Python Tutorial)', url: 'https://docs.python.org/3/tutorial/' }],
+    },
+    {
+        id: 'r-lang', name: 'R', disc: 'math-cs', icon: 'sigma',
+        about: 'لغة وبيئة متخصصة في الحوسبة الإحصائية والرسوميات، المعيار في تحليل البيانات الإحصائية والبحث العلمي الكمي.',
+        uses: ['التحليل الإحصائي للبيانات', 'بناء النماذج الإحصائية', 'الرسوميات العلمية (ggplot2)', 'تحليل بيانات التجارب'],
+        specs: ['الرياضيات (إحصاء)', 'البيولوجي (إحصاء حيوي)', 'تحليل البيانات البحثية'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر؛ يُستخدم عادة مع بيئة RStudio/Posit.',
+        site: 'https://www.r-project.org/', siteLabel: 'r-project.org',
+        learn: [{ label: 'الأدلة الرسمية (R Manuals)', url: 'https://cran.r-project.org/manuals.html' }],
+    },
+    {
+        id: 'avogadro', name: 'Avogadro', disc: 'chemistry', icon: 'flask',
+        about: 'محرر جزيئات مجاني ومفتوح المصدر لبناء وعرض الجزيئات ثلاثية الأبعاد وتحسين بنيتها، مدخل سهل للكيمياء الحاسوبية.',
+        uses: ['بناء وعرض الجزيئات ثلاثية الأبعاد', 'تحسين البنية الجزيئية (Optimization)', 'تجهيز مدخلات برامج الكيمياء الكمية', 'التعلم البصري للتراكيب الكيميائية'],
+        specs: ['الكيمياء', 'الكيمياء الحيوية', 'برامج الكيمياء المتميزة'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر.',
+        site: 'https://avogadro.cc/', siteLabel: 'avogadro.cc',
+        learn: [{ label: 'توثيق Avogadro الرسمي', url: 'https://avogadro.cc' }],
+    },
+    {
+        id: 'chemdraw', name: 'ChemDraw', disc: 'chemistry', icon: 'flask',
+        about: 'الأداة القياسية في الكيمياء لرسم التراكيب الجزيئية ومعادلات التفاعلات برسومات احترافية جاهزة للنشر العلمي.',
+        uses: ['رسم التراكيب الجزيئية بدقة نشر', 'رسم معادلات وميكانيزمات التفاعلات', 'تسمية المركبات تلقائيًا', 'تجهيز الرسومات للأبحاث والتقارير'],
+        specs: ['الكيمياء', 'الكيمياء العضوية والحيوية', 'كتابة الأبحاث الكيميائية'],
+        requirements: 'Windows / macOS — ترخيص مدفوع (تتوفر خصومات وتراخيص طلابية عبر بعض الجامعات).',
+        site: 'https://revvitysignals.com/products/research/chemdraw', siteLabel: 'revvitysignals.com',
+        learn: [{ label: 'الموقع الرسمي — المنتج والتجربة المجانية', url: 'https://revvitysignals.com/products/research/chemdraw' }],
+    },
+    {
+        id: 'qgis', name: 'QGIS', disc: 'geology', icon: 'rock',
+        about: 'نظام معلومات جغرافية (GIS) احترافي مجاني ومفتوح المصدر لإنتاج الخرائط وتحليل البيانات المكانية والجيولوجية.',
+        uses: ['إنتاج الخرائط الجيولوجية والطبوغرافية', 'تحليل البيانات المكانية والاستشعار عن بعد', 'إدارة طبقات البيانات الجغرافية', 'مشروعات التخرج الميدانية'],
+        specs: ['الجيولوجيا', 'فلك وأرصاد (التحليل المكاني)', 'الدراسات البيئية'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر.',
+        site: 'https://qgis.org/', siteLabel: 'qgis.org',
+        learn: [{ label: 'QGIS Training Manual — دليل تدريبي رسمي خطوة بخطوة', url: 'https://www.qgis.org/en/site/forusers/trainingmaterial/index.html' }],
+    },
+    {
+        id: 'google-earth', name: 'Google Earth', disc: 'geology', icon: 'globe',
+        about: 'استكشاف الأرض بصور الأقمار الصناعية والتضاريس ثلاثية الأبعاد — أداة أساسية للمعاينة الميدانية الأولية ودراسة التضاريس والتراكيب السطحية.',
+        uses: ['المعاينة الميدانية الأولية للمواقع', 'دراسة التضاريس والتراكيب السطحية', 'القياسات المكانية البسيطة', 'توثيق مواقع العينات'],
+        specs: ['الجيولوجيا', 'الدراسات الميدانية', 'البيئة'],
+        requirements: 'يعمل من المتصفح، وتوجد نسخة احترافية للحاسوب — مجاني.',
+        site: 'https://earth.google.com/', siteLabel: 'earth.google.com',
+        learn: [{ label: 'مركز مساعدة Google Earth الرسمي', url: 'https://support.google.com/earth' }],
+    },
+    {
+        id: 'blast', name: 'BLAST', disc: 'biology', icon: 'leaf',
+        about: 'أداة المرجعية العالمية من NCBI لمقارنة تسلسلات الأحماض النووية والبروتينات وإيجاد التشابهات عبر قواعد البيانات الحيوية.',
+        uses: ['مقارنة التسلسلات الجينية والبروتينية', 'البحث عن التشابهات في قواعد البيانات', 'تحليل التطور الجزيئي', 'أبحاث الميكروبيولوجي والتكنولوجيا الحيوية'],
+        specs: ['البيولوجي', 'ميكروبيولوجي', 'التكنولوجيا الحيوية', 'التحاليل البيولوجية'],
+        requirements: 'يعمل بالكامل من المتصفح عبر موقع NCBI — مجاني، بلا تحميل.',
+        site: 'https://blast.ncbi.nlm.nih.gov/Blast.cgi', siteLabel: 'blast.ncbi.nlm.nih.gov',
+        learn: [{ label: 'دليل مساعدة BLAST الرسمي', url: 'https://blast.ncbi.nlm.nih.gov/doc/blast-help' }],
+    },
+    {
+        id: 'imagej', name: 'ImageJ', disc: 'biology', icon: 'microscope',
+        about: 'برنامج معالجة وتحليل الصور العلمية الأشهر في الأحياء: قياسات المجهر، عد الخلايا، تحليل الرقائق (Gels) — مجاني ومفتوح المصدر.',
+        uses: ['تحليل صور المجهر والأنسجة', 'عد الخلايا وقياس المساحات', 'تحليل رقائق الفصل (Gels/Blots)', 'معالجة الصور العلمية كميًا'],
+        specs: ['البيولوجي', 'ميكروبيولوجي', 'الأنسجة والهستولوجي', 'معامل الأبحاث'],
+        requirements: 'Windows / macOS / Linux — مجاني ومفتوح المصدر؛ توجد توزيعة Fiji المحملة بالإضافات.',
+        site: 'https://imagej.net/', siteLabel: 'imagej.net',
+        learn: [{ label: 'ImageJ Learn — شروحات رسمية بالأمثلة', url: 'https://imagej.net/learn/' }],
+    },
+];
+
+export const SOFTWARE_NOTE = 'الروابط توصل للمواقع الرسمية فقط. حمّل أي برنامج من مصدره الرسمي، وراجع ترخيصه — بعض البرامج مدفوعة وتوفر نسخًا أو خصومات طلابية.';
