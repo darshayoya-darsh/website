@@ -3,8 +3,13 @@ main = "src/index.js"
 compatibility_date = "2026-11-25"
 workers_dev = true
 
-# Set the model key with: wrangler secret put GROQ_API_KEY
-# (never commit the key to git)
+# Secrets (never commit to git): wrangler secret put GROQ_API_KEY
+#                                wrangler secret put B2_KEY_ID
+#                                wrangler secret put B2_APPLICATION_KEY
 
 [vars]
 MODELS = "openai/gpt-oss-120b,qwen/qwen3.8-27b"
+SUPA_URL = "https://nhufspxzwbtvmamukpoa.supabase.co"
+SUPA_KEY = "sb_publishable_Q0OuPQHYGAb271d0jkxIBw_6yMueXMk"
+B2_BUCKET_ID = "e69baea92d961b41af2b021d"
+B2_BUCKET_NAME = "azu-science-files"
