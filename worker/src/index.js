@@ -23,9 +23,8 @@ const MAX_CHARS = 2000;
 const RATE_PER_MIN = 10;
 const RATE_PER_DAY = 120;
 
-/* 100MB per file (big references run ~1700 pages). Note: the platform's
-   request-size limit is also ~100MB, so files must stay a little under it. */
-const MAX_FILE_BYTES = 100 * 1024 * 1024;
+/* 70MB per file (cap set by the platform owner; big references run ~1700 pages). */
+const MAX_FILE_BYTES = 70 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
     'application/pdf',
     'application/msword',
@@ -199,7 +198,7 @@ async function handleUpload(request, env) {
     try { form = await request.formData(); } catch { return json({ error: 'طلب غير صالح.' }, 400); }
     const file = form.get('file');
     if (!file || typeof file === 'string') return json({ error: 'لا يوجد ملف.' }, 400);
-    if (file.size > MAX_FILE_BYTES) return json({ error: 'الملف أكبر من ١٠٠ ميجابايت.' }, 400);
+    if (file.size > MAX_FILE_BYTES) return json({ error: 'الملف أكبر من ٧٠ ميجابايت.' }, 400);
     if (file.type && !ALLOWED_TYPES.has(file.type)) {
         return json({ error: 'نوع الملف غير مدعوم. PDF أو ملفات Office أو صور فقط.' }, 400);
     }

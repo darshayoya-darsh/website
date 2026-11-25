@@ -112,7 +112,7 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
             </button>
             {file && <span className="azu-admin-filename">{file.name} ({fmtSize(file.size)})</span>}
         </div>
-        <p className="azu-admin-note">PDF أو ملفات Office أو صور، بحد أقصى ١٠٠ ميجابايت. يظهر الملف للطلاب فور رفعه.</p>
+        <p className="azu-admin-note">PDF أو ملفات Office أو صور، بحد أقصى ٧٠ ميجابايت. يظهر الملف للطلاب فور رفعه.</p>
         {err && <p className="azu-admin-err" role="alert">{err}</p>}
         {ok && <p className="azu-admin-ok" role="status">{ok}</p>}
         <button type="button" className="azu-btn azu-btn-primary" disabled={!ready} onClick={upload}>

@@ -39,7 +39,7 @@ export const FILE_KINDS: { id: string; ar: string }[] = [
     { id: 'other', ar: 'أخرى' },
 ];
 
-export const MAX_FILE_BYTES = 100 * 1024 * 1024;
+export const MAX_FILE_BYTES = 70 * 1024 * 1024;
 
 const ACCEPT_EXT = /\.(pdf|docx?|pptx?|xlsx?|jpe?g|png|webp)$/i;
 
@@ -106,7 +106,7 @@ export interface UploadMeta {
 }
 
 export function validateUpload(file: File): string {
-    if (file.size > MAX_FILE_BYTES) return 'الملف أكبر من ١٠٠ ميجابايت.';
+    if (file.size > MAX_FILE_BYTES) return 'الملف أكبر من ٧٠ ميجابايت.';
     if (file.type && !/^(application\/(pdf|msword|vnd\.|)|image\/(jpeg|png|webp))/.test(file.type) && !ACCEPT_EXT.test(file.name)) {
         return 'نوع الملف غير مدعوم. PDF أو ملفات Office أو صور فقط.';
     }
