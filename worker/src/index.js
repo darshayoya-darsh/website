@@ -20,6 +20,7 @@ const SYSTEM_PROMPT = `أنت "مساعد AZU Science"، المساعد الذك
 - البيانات الأكاديمية المعروضة حاليًا في كل المنصة مأخوذة من لائحة كلية العلوم بنين القاهرة، مؤقتًا، لحين وصول لوائح الكليات الثلاث الأخرى؛ إن سألك طالب من كلية أخرى عن تفاصيل تخص كليته، وضّح أن المعروض حاليًا بيانات علوم بنين القاهرة وأن بيانات كليته ستُضاف عند توفر لوائحها.
 - القسم الأكاديمي يُفتح من تبويب «أكاديمي» في القائمة العلوية: يختار الطالب أولًا بين «أقسام أساسية» و«برامج متميزة». الأقسام الأساسية: فيزياء ورياضيات، كيمياء، بيولوجي، جيولوجيا، والمقررات مرتبة حسب السنة (من الأولى إلى الرابعة) ثم الشعبة ثم الترم (الأول والثاني). والبرامج المتميزة ثمانية بنظام الساعات المعتمدة والدراسة بالإنجليزية: الكيمياء والكيمياء الحيوية، الكيمياء التطبيقية الصناعية، الفيزياء النووية والمفاعلات، الفيزياء الإشعاعية والطبية، التكنولوجيا الحيوية والكيمياء الحيوية الجزيئية، الميكروبيولوجي والكيمياء الحيوية، بكالوريوس العلوم في الحوسبة الذكية، التحاليل البيولوجية والكيمياء.
 - ملفات المقررات: امتحانات سابقة، محاضرات، سلايدات الدكتور، كتاب الكلية، وملفات أخرى؛ يرفعها مشرفو الأقسام وتظهر للطلاب فور رفعها. حالة الملفات الحالية (من قاعدة البيانات مباشرة): {CATALOG}
+- معلومات موثقة من مصادر الكلية الرسمية (بروشورات وإعلانات معتمدة)؛ التزم بها حرفيًا عند السؤال عنها ولا تضف إليها: {KNOWLEDGE}
 - الأدوات (من تبويب «أدوات»): حاسبة التقدير، وهي محوّل استرشادي بين النسبة المئوية والتقدير ونقاط الـ GPA وفق هذا المقياس: ممتاز A (4.0) من 90٪، A- (3.7) من 85، جيد جدًا B+ (3.3) من 80، B (3.0) من 75، B- (2.7) من 70، جيد C+ (2.3) من 65، C (2.0) من 60، مقبول C- (1.7) من 57، D+ (1.3) من 55، D (1.0) من 50، وأقل من 50 راسب F. نتائجها استرشادية مبنية على نموذج لوائح الساعات المعتمدة وليست بديلًا عن النتائج الرسمية. وهناك أيضًا مكتبة برامج علمية مقترحة لكل تخصص، وبحث شامل في محتوى المنصة.
 - الصفحات: فرص (تدريبات ومنح ومسابقات)، أخبار، مجتمع، عن المنصة، أسئلة شائعة، تواصل معنا، الإبلاغ عن مشكلة.
 - الحسابات: التسجيل بالبريد الإلكتروني مع تأكيد البريد. لوحة المشرفين مخصصة للمشرفين فقط.
@@ -82,6 +83,25 @@ async function fileCatalog(env) {
         catalogCache = { at: Date.now(), text };
     } catch { /* keep the cached/empty catalog */ }
     return catalogCache.text;
+}
+
+/* Verified knowledge from official faculty sources (brochures, announcements),
+   stored in the knowledge_docs table; cached per isolate for 5 minutes.
+   Readable through the publishable key (public program info, RLS read-only). */
+let knowledgeCache = { at: 0, text: '' };
+async function knowledgeDocs(env) {
+    if (knowledgeCache.text && Date.now() - knowledgeCache.at < 300_000) return knowledgeCache.text;
+    try {
+        const r = await fetch(`${env.SUPA_URL}/rest/v1/knowledge_docs?select=title,body&order=updated_at.desc&limit=40`, {
+            headers: { apikey: env.SUPA_KEY, Authorization: `Bearer ${env.SUPA_KEY}` },
+        });
+        if (!r.ok) return knowledgeCache.text;
+        const rows = await r.json();
+        if (Array.isArray(rows) && rows.length) {
+            knowledgeCache = { at: Date.now(), text: rows.map((d) => `${d.title}:\n${d.body}`).join('\n\n') };
+        }
+    } catch { /* keep the cached/empty knowledge */ }
+    return knowledgeCache.text;
 }
 
 const MAX_MESSAGES = 20;
@@ -450,8 +470,10 @@ async function handleAgent(request, env) {
         return json({ error: 'no user message' }, 400);
     }
 
-    const catalog = await fileCatalog(env);
-    const systemPrompt = SYSTEM_PROMPT.replace('{CATALOG}', catalog || 'تعذر تحميل قائمة الملفات الآن.');
+    const [catalog, knowledge] = await Promise.all([fileCatalog(env), knowledgeDocs(env)]);
+    const systemPrompt = SYSTEM_PROMPT
+        .replace('{CATALOG}', catalog || 'تعذر تحميل قائمة الملفات الآن.')
+        .replace('{KNOWLEDGE}', knowledge || 'لا توجد معلومات إضافية موثقة حتى الآن.');
 
     /* Primary brain: Gemini (free tier). Falls back to the Groq chain when the
        key is missing or the quota/errors kick in. */
