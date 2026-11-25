@@ -5,7 +5,7 @@
    - /delete (POST): removes the B2 object and the files row (RLS enforced).
    - /file-url (GET): short-lived download URL for a live file, any signed-in
      student; admins can fetch URLs for anything in their scope.
-   Secrets (wrangler secret put): GROQ_API_KEY, B2_KEY_ID, B2_APPLICATION_KEY.
+   Secrets (wrangler secret put): GEMINI_API_KEY, GROQ_API_KEY, B2_KEY_ID, B2_APPLICATION_KEY.
    Everything else lives in wrangler.toml [vars]. */
 
 const SYSTEM_PROMPT = `أنت "مساعد AZU Science"، المساعد الذكي لمنصة AZU Science الطلابية لكليات العلوم بجامعة الأزهر.
@@ -203,15 +203,18 @@ async function b2Authorize(env) {
 }
 
 async function b2Call(env, action, body) {
-    const a = await b2Authorize(env);
-    const r = await fetch(`${a.apiUrl}/b2api/v2/${action}`, {
-        method: 'POST',
-        headers: { Authorization: a.token, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-    if (r.status === 401) { b2auth = null; } // token expired; caller may retry once
-    if (!r.ok) throw new Error(`${action} failed: ${r.status}`);
-    return r.json();
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const a = await b2Authorize(env);
+        const r = await fetch(`${a.apiUrl}/b2api/v2/${action}`, {
+            method: 'POST',
+            headers: { Authorization: a.token, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (r.status === 401) { b2auth = null; continue; } // token expired; re-authorize once
+        if (!r.ok) throw new Error(`${action} failed: ${r.status}`);
+        return r.json();
+    }
+    throw new Error(`${action} failed: 401`);
 }
 
 async function b2Upload(env, key, file) {
@@ -266,6 +269,10 @@ async function handleUpload(request, env) {
     if (!file || typeof file === 'string') return json({ error: 'لا يوجد ملف.' }, 400);
     if (file.size > MAX_FILE_BYTES) return json({ error: 'الملف أكبر من ٧٠ ميجابايت.' }, 400);
     if (file.type && !ALLOWED_TYPES.has(file.type)) {
+        return json({ error: 'نوع الملف غير مدعوم. PDF أو ملفات Office أو صور فقط.' }, 400);
+    }
+    // Some mobile browsers send no MIME type; then the extension must check out.
+    if (!file.type && !/\.(pdf|docx?|pptx?|xlsx?|jpe?g|png|webp)$/i.test(file.name || '')) {
         return json({ error: 'نوع الملف غير مدعوم. PDF أو ملفات Office أو صور فقط.' }, 400);
     }
     const faculty = cleanText(form.get('faculty'), 50);

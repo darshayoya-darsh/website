@@ -14,10 +14,58 @@ import { AuthPage } from './AuthPage';
 import { AdminPage } from './AdminPage';
 import { Icon } from './Icon';
 import { MobileNav, SearchOverlay, TopNavLinks, SignInLink } from './nav';
-import { clearJustConfirmed, useAuth } from './auth';
+import { clearJustConfirmed, useAuth, getAuth, SUPA_URL, SUPA_KEY } from './auth';
+import { fileUrl, FILE_KINDS, fmtSize } from './admin';
+import type { FileRow } from './admin';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software, Faculty } from './data';
 
 const ASTRO_TRACKS = ['فلك وأرصاد', 'فلك خاص', 'أرصاد خاص'];
+
+/* Live course files uploaded through the admin portal. Metadata reads run
+   under the publishable key (RLS files_read_live is public); downloading
+   needs a signed-in student (worker validates the session). */
+function LiveFiles({ faculty, track, ar }: { faculty: string; track: string; ar: string }) {
+    const [rows, setRows] = React.useState<FileRow[] | null>(null);
+    const [needSignIn, setNeedSignIn] = React.useState(false);
+    const [err, setErr] = React.useState('');
+    React.useEffect(() => {
+        let on = true;
+        setRows(null);
+        const q = `${SUPA_URL}/rest/v1/files?select=id,faculty,category,department,year,course_code,title,kind,size_bytes,status,created_at&faculty=eq.${faculty}&department=eq.${track}&status=eq.live&order=year.asc,created_at.desc&limit=200`;
+        fetch(q, { headers: { apikey: SUPA_KEY } })
+            .then((r) => (r.ok ? r.json() : []))
+            .then((d) => { if (on) setRows(Array.isArray(d) ? d : []); })
+            .catch(() => { if (on) setRows([]); });
+        return () => { on = false; };
+    }, [faculty, track]);
+
+    const open = async (id: number) => {
+        setErr(''); setNeedSignIn(false);
+        if (!getAuth()) { setNeedSignIn(true); return; }
+        try { window.open(await fileUrl(id), '_blank'); }
+        catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر فتح الملف.'); }
+    };
+
+    const kindAr = (id: string) => FILE_KINDS.find((k) => k.id === id)?.ar || id;
+    return <div className="azu-block" dir="rtl">
+        <div className="azu-minihead">ملفات {ar}</div>
+        {rows === null && <p className="azu-admin-note">جارٍ تحميل الملفات…</p>}
+        {rows !== null && rows.length === 0 && <p className="azu-admin-note">لا توجد ملفات مرفوعة هنا بعد. يضيفها مشرفو القسم فور رفعها.</p>}
+        {rows !== null && rows.length > 0 && <div>
+            {rows.map((f) => <div key={f.id} className="azu-admin-row">
+                <div className="azu-admin-row-main">
+                    <span className="azu-admin-row-title">{f.title}</span>
+                    <span className="azu-admin-row-meta">{kindAr(f.kind)} · {f.course_code} · {YEAR_NAMES[f.year] || f.year} · {fmtSize(f.size_bytes)}</span>
+                </div>
+                <div className="azu-admin-row-actions">
+                    <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => open(f.id)}>فتح</button>
+                </div>
+            </div>)}
+        </div>}
+        {needSignIn && <p className="azu-admin-note">تحميل الملفات يتطلب حسابًا. <Link to="/signin">سجّل دخولك</Link> ثم أعد المحاولة.</p>}
+        {err && <p className="azu-admin-err" role="alert">{err}</p>}
+    </div>;
+}
 const deptsFor = (facultyId: string) => DEPARTMENTS.filter(d => !d.onlyFaculties || d.onlyFaculties.includes(facultyId));
 
 const NEWS = [
@@ -468,6 +516,7 @@ function ProgramPage({ faculty, program }: { faculty: Faculty; program: Program 
             </Reveal>
         </div>}
         {program.pending && <div className="azu-empty"><Icon name="spark" size={26} /><p>التفاصيل الكاملة للبرنامج — قريبًا.</p></div>}
+        <LiveFiles faculty={faculty.id} track={program.id} ar={`برنامج ${program.ar}`} />
         <div className="azu-backrow"><Link to={`/academic/${faculty.id}/special`} className="azu-btn azu-btn-outline"><Icon name="back" size={15} /> كل البرامج المتميزة</Link></div>
     </section>;
 }
@@ -486,6 +535,7 @@ function DepartmentPage({ faculty, dept }: { faculty: Faculty; dept: Dept }) {
                 <span className="azu-card-arrow"><Icon name="arrow" size={15} /></span>
             </Link>)}
         </Reveal>
+        <LiveFiles faculty={faculty.id} track={dept.id} ar={`قسم ${dept.ar}`} />
         {dept.compare && <div className="azu-block">
             <div className="azu-minihead" dir="rtl">الفرق بين الشعب</div>
             <div className="azu-vs" dir="rtl">
