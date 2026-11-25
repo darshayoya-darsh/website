@@ -340,12 +340,20 @@ function Academic() {
     </section>;
 }
 
+/* Until the other faculties' bylaws (لوائح) arrive, the platform shows the
+   Science Boys Cairo structure and data everywhere; this note says so. */
+function CairoDataNote({ faculty }: { faculty: Faculty }) {
+    if (faculty.id === 'boys-cairo') return null;
+    return <p className="azu-admin-note" dir="rtl">المعروض حاليًا هيكل وبيانات كلية العلوم بنين القاهرة مؤقتًا؛ هتتحدث صفحات {faculty.ar} ببياناتها أول ما لوائحها توصل.</p>;
+}
+
 function FacultyPage({ faculty }: { faculty: Faculty }) {
     return <section className="azu-section azu-flow">
         <Crumb items={[{ label: 'Home', to: '/' }, { label: 'Academic', to: '/academic' }, { label: `${faculty.ar} — ${faculty.city}` }]} />
         <div className="azu-kicker">{faculty.en.toUpperCase()} — {faculty.city === 'القاهرة' ? 'CAIRO' : 'ASSIUT'}</div>
         <h2 className="azu-title" dir="rtl">علوم {faculty.ar.split(' ')[1]} — {faculty.city}</h2>
         <p className="azu-lead">اختار نوع الدراسة اللي بتدور عليها.</p>
+        <CairoDataNote faculty={faculty} />
         <Reveal stagger className="azu-choice-grid">
             <Link to={`/academic/${faculty.id}/basic`} className="azu-choice">
                 <span className="azu-choice-icon"><Icon name="books" size={28} /></span>
@@ -369,6 +377,7 @@ function BasicDepartments({ faculty }: { faculty: Faculty }) {
         <div className="azu-kicker">BASIC DEPARTMENTS</div>
         <h2 className="azu-title" dir="rtl">الأقسام الأساسية</h2>
         <p className="azu-lead">اختار قسمك عشان توصل للفرق والتخصصات.</p>
+        <CairoDataNote faculty={faculty} />
         <Reveal stagger className="azu-dept-list">
             {deptsFor(faculty.id).map(d => <Link key={d.id} to={`/academic/${faculty.id}/basic/${d.id}`} className="azu-dept">
                 <span className="azu-dept-icon"><Icon name={d.icon} size={24} /></span>
@@ -389,6 +398,7 @@ function SpecialPrograms({ faculty }: { faculty: Faculty }) {
         <div className="azu-kicker">SPECIAL PROGRAMS</div>
         <h2 className="azu-title" dir="rtl">البرامج المتميزة</h2>
         <p className="azu-lead">برامج بنظام الساعات المعتمدة والدراسة بالإنجليزية — اختار البرنامج عشان تشوف التفاصيل الكاملة.</p>
+        <CairoDataNote faculty={faculty} />
         <Reveal stagger className="azu-prog-grid">
             {PROGRAMS.map(p => <Link key={p.id} to={`/academic/${faculty.id}/special/${p.id}`} className="azu-prog">
                 <span className="azu-prog-icon"><Icon name="spark" size={22} /></span>

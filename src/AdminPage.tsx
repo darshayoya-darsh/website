@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
 import { useAuth } from './auth';
-import { DEPARTMENTS, FACULTIES, YEAR_NAMES } from './data';
+import { DEPARTMENTS, PROGRAMS, FACULTIES, YEAR_NAMES } from './data';
 import {
     Grant, FileRow, Scope, FILE_KINDS, AccountRow,
     myGrants, addGrant, removeGrant, listFiles, listAccounts, canManage,
@@ -23,11 +23,15 @@ const facultyName = (id: string) => {
     return f ? `${f.ar} — ${f.city}` : id;
 };
 const deptName = (id: string) => DEPARTMENTS.find((d) => d.id === id)?.ar || id;
+const progName = (id: string) => PROGRAMS.find((p) => p.id === id)?.ar || id;
+const trackName = (category: string, id: string) => category === 'special' ? progName(id) : deptName(id);
+const trackKind = (category: string) => category === 'special' ? 'برنامج' : 'قسم';
 const kindName = (id: string) => FILE_KINDS.find((k) => k.id === id)?.ar || id;
 const scopeLabel = (g: Grant) => {
+    const cat = g.category || 'basic';
     if (g.scope === 'faculty') return `كلية ${facultyName(g.faculty)}`;
-    if (g.scope === 'track') return `قسم ${deptName(g.track || '')} — ${facultyName(g.faculty)}`;
-    return `قسم ${deptName(g.track || '')}، ${YEAR_NAMES[g.year || 1]} — ${facultyName(g.faculty)}`;
+    if (g.scope === 'track') return `${trackKind(cat)} ${trackName(cat, g.track || '')} — ${facultyName(g.faculty)}`;
+    return `${trackKind(cat)} ${trackName(cat, g.track || '')}، ${YEAR_NAMES[g.year || 1]} — ${facultyName(g.faculty)}`;
 };
 
 function Select({ value, onChange, children, label }: {
@@ -40,6 +44,7 @@ function Select({ value, onChange, children, label }: {
 
 function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: boolean; onUploaded: (f: FileRow) => void }) {
     const [faculty, setFaculty] = React.useState('');
+    const [category, setCategory] = React.useState<'basic' | 'special'>('basic');
     const [department, setDepartment] = React.useState('');
     const [year, setYear] = React.useState('');
     const [course, setCourse] = React.useState('');
@@ -52,6 +57,7 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     const depts = DEPARTMENTS.filter((d) => !d.onlyFaculties || d.onlyFaculties.includes(faculty));
+    const tracks = category === 'special' ? PROGRAMS : depts;
     const allowed = (f: string, d: string, y: number) => canManage(grants, isSuper, f, d, y);
     const years = [1, 2, 3, 4].filter((y) => !faculty || !department || allowed(faculty, department, y));
 
@@ -65,7 +71,7 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
         setBusy(true);
         try {
             const row = await uploadCourseFile({
-                faculty, department, year: Number(year),
+                faculty, category, department, year: Number(year),
                 course_code: course.trim(), title: title.trim() || file.name, kind,
             }, file);
             setOk(`تم رفع «${row.title}» وأصبح متاحًا للطلاب.`);
@@ -84,9 +90,13 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
                 <option value="">اختار الكلية…</option>
                 {FACULTIES.map((f) => <option key={f.id} value={f.id}>{f.ar} — {f.city}</option>)}
             </Select>
-            <Select value={department} label="القسم" onChange={(v) => setDepartment(v)}>
-                <option value="">اختار القسم…</option>
-                {depts.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
+            <Select value={category} label="النوع" onChange={(v) => { setCategory(v as 'basic' | 'special'); setDepartment(''); }}>
+                <option value="basic">قسم أساسي</option>
+                <option value="special">برنامج متميز</option>
+            </Select>
+            <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={(v) => setDepartment(v)}>
+                <option value="">{category === 'special' ? 'اختار البرنامج…' : 'اختار القسم…'}</option>
+                {tracks.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
             </Select>
             <Select value={year} label="السنة" onChange={(v) => setYear(v)}>
                 <option value="">اختار السنة…</option>
@@ -151,7 +161,7 @@ function FilesList({ grants, isSuper, files, setFiles }: {
             <div className="azu-admin-row-main">
                 <span className="azu-admin-row-title">{f.title}</span>
                 <span className="azu-admin-row-meta">
-                    {kindName(f.kind)} · {f.course_code} · {deptName(f.department)} · {YEAR_NAMES[f.year]} · {facultyName(f.faculty)} · {fmtSize(f.size_bytes)}
+                    {kindName(f.kind)} · {f.course_code} · {trackName(f.category || 'basic', f.department)} · {YEAR_NAMES[f.year]} · {facultyName(f.faculty)} · {fmtSize(f.size_bytes)}
                 </span>
             </div>
             <div className="azu-admin-row-actions">
@@ -170,6 +180,7 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
     const [email, setEmail] = React.useState('');
     const [scope, setScope] = React.useState<Scope>('cohort');
     const [faculty, setFaculty] = React.useState('boys-cairo');
+    const [category, setCategory] = React.useState<'basic' | 'special'>('basic');
     const [department, setDepartment] = React.useState('');
     const [year, setYear] = React.useState('');
     const [busy, setBusy] = React.useState(false);
@@ -177,6 +188,7 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
     const [ok, setOk] = React.useState('');
 
     const depts = DEPARTMENTS.filter((d) => !d.onlyFaculties || d.onlyFaculties.includes(faculty));
+    const tracks = category === 'special' ? PROGRAMS : depts;
     const ready = email.includes('@') && faculty && (scope === 'faculty' || (department && (scope === 'track' || year)));
 
     const add = async () => {
@@ -184,7 +196,7 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
         setBusy(true); setErr(''); setOk('');
         try {
             await addGrant({
-                email: email.trim().toLowerCase(), scope, faculty,
+                email: email.trim().toLowerCase(), scope, faculty, category,
                 track: scope === 'faculty' ? null : department,
                 year: scope === 'cohort' ? Number(year) : null,
             });
@@ -214,9 +226,13 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
             <Select value={faculty} label="الكلية" onChange={(v) => { setFaculty(v); setDepartment(''); }}>
                 {FACULTIES.map((f) => <option key={f.id} value={f.id}>{f.ar} — {f.city}</option>)}
             </Select>
-            {scope !== 'faculty' && <Select value={department} label="القسم" onChange={setDepartment}>
-                <option value="">اختار القسم…</option>
-                {depts.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
+            {scope !== 'faculty' && <Select value={category} label="النوع" onChange={(v) => { setCategory(v as 'basic' | 'special'); setDepartment(''); }}>
+                <option value="basic">قسم أساسي</option>
+                <option value="special">برنامج متميز</option>
+            </Select>}
+            {scope !== 'faculty' && <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={setDepartment}>
+                <option value="">{category === 'special' ? 'اختار البرنامج…' : 'اختار القسم…'}</option>
+                {tracks.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
             </Select>}
             {scope === 'cohort' && <Select value={year} label="السنة" onChange={setYear}>
                 <option value="">اختار السنة…</option>

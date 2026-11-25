@@ -1,4 +1,4 @@
-import { getAuth, SUPA_URL, SUPA_KEY } from './auth';
+import { ensureFreshToken, SUPA_URL, SUPA_KEY } from './auth';
 
 /* Admin portal API: scoped admins manage course files; the super admin also
    manages the grants themselves. Metadata calls go to PostgREST under the
@@ -14,6 +14,7 @@ export interface Grant {
     email: string;
     scope: Scope;
     faculty: string;
+    category: 'basic' | 'special';
     track: string | null;
     year: number | null;
 }
@@ -21,6 +22,7 @@ export interface Grant {
 export interface FileRow {
     id: number;
     faculty: string;
+    category: 'basic' | 'special';
     department: string;
     year: number;
     course_code: string;
@@ -43,22 +45,24 @@ export const MAX_FILE_BYTES = 70 * 1024 * 1024;
 
 const ACCEPT_EXT = /\.(pdf|docx?|pptx?|xlsx?|jpe?g|png|webp)$/i;
 
-function token(): string {
-    const s = getAuth();
-    if (!s) throw new Error('سجّل دخولك أولًا.');
-    return s.access_token;
-}
-
-async function rest(path: string, init?: RequestInit) {
-    const r = await fetch(`${SUPA_URL}/rest/v1${path}`, {
-        ...init,
-        headers: {
-            apikey: SUPA_KEY,
-            Authorization: `Bearer ${token()}`,
-            'Content-Type': 'application/json',
-            ...((init && init.headers) || {}),
-        },
-    });
+/* Every call renews the access token first (ensureFreshToken); a 401 after a
+   fresh token means the session is truly dead — the auth layer has already
+   dropped it and the app returns to sign-in. */
+async function rest(path: string, init?: RequestInit): Promise<Response> {
+    const attempt = async () => {
+        const at = await ensureFreshToken();
+        return fetch(`${SUPA_URL}/rest/v1${path}`, {
+            ...init,
+            headers: {
+                apikey: SUPA_KEY,
+                Authorization: `Bearer ${at}`,
+                'Content-Type': 'application/json',
+                ...((init && init.headers) || {}),
+            },
+        });
+    };
+    let r = await attempt();
+    if (r.status === 401) r = await attempt(); // one retry with a renewed token
     if (!r.ok) {
         const data = await r.json().catch(() => ({}));
         throw new Error(data.message || 'حدث خطأ غير متوقع. أعد المحاولة.');
@@ -68,7 +72,7 @@ async function rest(path: string, init?: RequestInit) {
 
 /* RLS returns the caller's own grants; the super admin sees all of them. */
 export async function myGrants(): Promise<Grant[]> {
-    const r = await rest('/admin_grants?select=id,email,scope,faculty,track,year&order=created_at.desc');
+    const r = await rest('/admin_grants?select=id,email,scope,faculty,category,track,year&order=created_at.desc');
     return r.json();
 }
 
@@ -98,7 +102,7 @@ export async function listAccounts(): Promise<AccountRow[]> {
 }
 
 export async function listFiles(): Promise<FileRow[]> {
-    const r = await rest('/files?select=id,faculty,department,year,course_code,title,kind,size_bytes,status,created_at&order=created_at.desc&limit=300');
+    const r = await rest('/files?select=id,faculty,category,department,year,course_code,title,kind,size_bytes,status,created_at&order=created_at.desc&limit=300');
     return r.json();
 }
 
@@ -115,6 +119,7 @@ export function canManage(grants: Grant[], isSuper: boolean, faculty: string, de
 
 export interface UploadMeta {
     faculty: string;
+    category: 'basic' | 'special';
     department: string;
     year: number;
     course_code: string;
@@ -133,15 +138,17 @@ export function validateUpload(file: File): string {
 export async function uploadCourseFile(meta: UploadMeta, file: File): Promise<FileRow> {
     const form = new FormData();
     form.set('faculty', meta.faculty);
+    form.set('category', meta.category);
     form.set('department', meta.department);
     form.set('year', String(meta.year));
     form.set('course_code', meta.course_code);
     form.set('title', meta.title);
     form.set('kind', meta.kind);
     form.set('file', file);
+    const at = await ensureFreshToken();
     const r = await fetch(`${WORKER}/upload`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token()}` },
+        headers: { Authorization: `Bearer ${at}` },
         body: form,
     });
     const data = await r.json().catch(() => ({}));
@@ -150,9 +157,10 @@ export async function uploadCourseFile(meta: UploadMeta, file: File): Promise<Fi
 }
 
 export async function deleteFile(id: number): Promise<void> {
+    const at = await ensureFreshToken();
     const r = await fetch(`${WORKER}/delete`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${at}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
     });
     const data = await r.json().catch(() => ({}));
@@ -160,8 +168,9 @@ export async function deleteFile(id: number): Promise<void> {
 }
 
 export async function fileUrl(id: number): Promise<string> {
+    const at = await ensureFreshToken();
     const r = await fetch(`${WORKER}/file-url?id=${id}`, {
-        headers: { Authorization: `Bearer ${token()}` },
+        headers: { Authorization: `Bearer ${at}` },
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || 'تعذر فتح الملف. أعد المحاولة.');

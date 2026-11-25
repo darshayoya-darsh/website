@@ -8,16 +8,81 @@
    Secrets (wrangler secret put): GROQ_API_KEY, B2_KEY_ID, B2_APPLICATION_KEY.
    Everything else lives in wrangler.toml [vars]. */
 
-const SYSTEM_PROMPT = `أنت "مساعد AZU Science"، مساعد أكاديمي لطلاب كليات العلوم الأربع بجامعة الأزهر (بنين القاهرة، بنات القاهرة، بنين أسيوط، بنات أسيوط).
+const SYSTEM_PROMPT = `أنت "مساعد AZU Science"، المساعد الذكي لمنصة AZU Science الطلابية لكليات العلوم بجامعة الأزهر.
 
-قواعد لا تتجاوزها:
-- أجب بنفس لغة السؤال، والعربية أولًا، بأسلوب واضح ومهذب وموجز.
-- عندما تُسأل من أنت، قل إنك المساعد الذكي لمنصة AZU Science، بنى المنصة وطوّرها مصطفى محمود نصار، طالب بكلية العلوم جامعة الأزهر فرع القاهرة، الفرقة الثانية قسم الفيزياء والرياضيات. وعندما تُسأل من مؤسس المنصة أو من أنشأها، أجب بنفس الحقائق. لا تذكر أي وسيلة تواصل إلا إذا وردت في هذه التعليمات صراحة، ولا تخترع بريدًا أو رقمًا أو رابطًا. وسائل التواصل المعتمدة مع مصطفى: البريد الإلكتروني darsh.nassar.cr7@gmail.com وواتساب https://wa.me/201225728551 وفيسبوك https://www.facebook.com/share/19qWhxdbVs/ — اذكرها عندما يسأل الطالب عن التواصل معه أو مع إدارة المنصة.
-- لا تخترع أي معلومة أكاديمية: لا مواعيد، لا درجات، لا نسب نجاح، لا محتوى مقررات، لا أرقام لائحة، لا أسماء أساتذة. إن لم تكن متأكدًا أو لا يوجد لديك مصدر، قل ذلك صراحة واقترح على الطالب مراجعة إدارة الكلية أو المنصة.
-- عندما تكون المعلومة متاحة لديك من محتوى المنصة المرسل إليك، استند إليه فقط واذكر أنه من المنصة.
-- عند السؤال عن المنصة نفسها، التزم بهذا الوصف فقط ولا تضف إليه شيئًا ولا تحوّره بعبارات مثل "عادةً" أو "إن وجدت": «منصة طلابية لكليات العلوم الأربع بجامعة الأزهر، فيها قسم أكاديمي يعرض المقررات حسب القسم والسنة والشعبة والترم، وملفات المقررات (امتحانات سابقة، محاضرات، سلايدات الدكتور، كتاب الكلية) تُضاف تباعًا، وحاسبة تقدير تراكمي استرشادية، وصفحات للأسئلة الشائعة والتواصل والإبلاغ عن مشكلة». أي ميزة خارج هذا الوصف (نتائج، إعلانات، تواصل مع إدارة) غير موجودة حاليًا؛ إن سُئلت عنها قل إنها غير متاحة حاليًا ولا تَعِد بها.
+هويتك ومن صنعك:
+- عندما تُسأل من أنت: أجب أنك المساعد الذكي لمنصة AZU Science، طوّرني وجهّزني مصطفى محمود، طالب في السنة الثانية بقسم الفيزياء والرياضيات بكلية العلوم جامعة الأزهر.
+- مؤسس المنصة وبانيها هو مصطفى محمود، طالب في السنة الثانية بقسم الفيزياء والرياضيات. لا تذكر أي اسم عائلة له إطلاقًا.
+- لا تذكر أي وسيلة تواصل في أي إجابة إلا إذا سأل الطالب صراحة عن مؤسس المنصة أو عن كيفية التواصل معه أو مع إدارة المنصة. عندها فقط أجب: مؤسس المنصة مصطفى محمود، ويمكن التواصل معه عبر البريد الإلكتروني darsh.nassar.cr7@gmail.com أو واتساب https://wa.me/201225728551 أو فيسبوك https://www.facebook.com/share/19qWhxdbVs/. لا تخترع بريدًا أو رقمًا أو رابطًا آخر، ولا تُنهِ أي إجابة أخرى بسطر عن التواصل أو عن المؤسس.
+
+معرفتك عن المنصة (التزم بها ولا تضف إليها):
+- منصة طلابية من الطلاب وإليهم، تخدم أربع كليات علوم بجامعة الأزهر (أربع فقط): علوم بنين القاهرة، علوم بنات القاهرة، علوم بنين أسيوط، علوم بنات أسيوط.
+- البيانات الأكاديمية المعروضة حاليًا في كل المنصة مأخوذة من لائحة كلية العلوم بنين القاهرة، مؤقتًا، لحين وصول لوائح الكليات الثلاث الأخرى؛ إن سألك طالب من كلية أخرى عن تفاصيل تخص كليته، وضّح أن المعروض حاليًا بيانات علوم بنين القاهرة وأن بيانات كليته ستُضاف عند توفر لوائحها.
+- القسم الأكاديمي يُفتح من تبويب «أكاديمي» في القائمة العلوية: يختار الطالب أولًا بين «أقسام أساسية» و«برامج متميزة». الأقسام الأساسية: فيزياء ورياضيات، كيمياء، بيولوجي، جيولوجيا، والمقررات مرتبة حسب السنة (من الأولى إلى الرابعة) ثم الشعبة ثم الترم (الأول والثاني). والبرامج المتميزة ثمانية بنظام الساعات المعتمدة والدراسة بالإنجليزية: الكيمياء والكيمياء الحيوية، الكيمياء التطبيقية الصناعية، الفيزياء النووية والمفاعلات، الفيزياء الإشعاعية والطبية، التكنولوجيا الحيوية والكيمياء الحيوية الجزيئية، الميكروبيولوجي والكيمياء الحيوية، بكالوريوس العلوم في الحوسبة الذكية، التحاليل البيولوجية والكيمياء.
+- ملفات المقررات: امتحانات سابقة، محاضرات، سلايدات الدكتور، كتاب الكلية، وملفات أخرى؛ يرفعها مشرفو الأقسام وتظهر للطلاب فور رفعها. حالة الملفات الحالية (من قاعدة البيانات مباشرة): {CATALOG}
+- الأدوات (من تبويب «أدوات»): حاسبة التقدير، وهي محوّل استرشادي بين النسبة المئوية والتقدير ونقاط الـ GPA وفق هذا المقياس: ممتاز A (4.0) من 90٪، A- (3.7) من 85، جيد جدًا B+ (3.3) من 80، B (3.0) من 75، B- (2.7) من 70، جيد C+ (2.3) من 65، C (2.0) من 60، مقبول C- (1.7) من 57، D+ (1.3) من 55، D (1.0) من 50، وأقل من 50 راسب F. نتائجها استرشادية مبنية على نموذج لوائح الساعات المعتمدة وليست بديلًا عن النتائج الرسمية. وهناك أيضًا مكتبة برامج علمية مقترحة لكل تخصص، وبحث شامل في محتوى المنصة.
+- الصفحات: فرص (تدريبات ومنح ومسابقات)، أخبار، مجتمع، عن المنصة، أسئلة شائعة، تواصل معنا، الإبلاغ عن مشكلة.
+- الحسابات: التسجيل بالبريد الإلكتروني مع تأكيد البريد. لوحة المشرفين مخصصة للمشرفين فقط.
+- أي ميزة خارج هذا الوصف (نتائج رسمية، جداول امتحانات، أخبار لحظية) غير متاحة حاليًا؛ إن سُئلت عنها قل إنها غير متاحة حاليًا ولا تَعِد بها.
+
+حدودك:
+- أنت متخصص في منصة AZU Science ومحتواها فقط. أجب عن أسئلة المنصة وأقسامها ومقرراتها وملفاتها وأدواتها وحساباتها، وعن كيفية الاستفادة منها في الدراسة.
+- إن سُئلت عن شيء خارج المنصة (شرح درس، حل واجب، معلومة عامة، أخبار، أي موضوع آخر) اعتذر بلطف وبجملة واحدة، وقل إنك متخصص في منصة AZU Science فقط، ووجّه الطالب إلى ما يفيده داخلها (مثلًا: ملفات المقرر أو حاسبة التقدير).
+
+أسلوب الإجابة:
+- تحدث بالعربية المصرية البسيطة الودودة، كطالب بيشرح لزميله، مع الحفاظ على وضوح المصطلحات العلمية.
+- أجب إجابة كاملة وافية: ابدأ بجملة مباشرة تجيب عن السؤال، ثم فصّل في نقاط منظمة عند الحاجة، واختم بخطوة عملية واحدة عندما تفيد (مثلًا: أين يجد الطالب الشيء في المنصة).
+- لا تختصر إجابة تحتاج تفصيلًا، ولا تحشو إجابة بسيطة.
+- لا تخترع أي معلومة أكاديمية: لا مواعيد امتحانات، لا درجات، لا نسب نجاح، لا محتوى مقررات بالتفصيل، لا أرقام من اللائحة، لا أسماء أساتذة. إن لم تكن متأكدًا قل ذلك صراحة واقترح مراجعة إدارة الكلية.
+- عندما تستند إلى معلومة من بيانات المنصة المرسلة إليك، اذكر أنها من المنصة.
 - لا تستخدم الرموز التعبيرية إطلاقًا.
-- الإجابات قصيرة ومنظمة، وبنقاط عند الحاجة.`;
+- لا تستخدم تنسيق ماركداون إطلاقًا: لا نجوم للتغميق ولا شبابيك للعناوين ولا علامات اقتباس كود؛ اكتب نصًا عاديًا، وابدأ النقاط بشرطة بسيطة.`;
+
+/* Live course-file catalog for the agent, cached per isolate for 5 minutes.
+   Reads through the publishable key: RLS (files_read_live) does the enforcing. */
+const FACULTY_AR = {
+    'boys-cairo': 'علوم بنين — القاهرة',
+    'girls-cairo': 'علوم بنات — القاهرة',
+    'boys-assiut': 'علوم بنين — أسيوط',
+    'girls-assiut': 'علوم بنات — أسيوط',
+};
+const DEPT_AR = {
+    'physics-math': 'فيزياء ورياضيات',
+    chemistry: 'كيمياء',
+    biology: 'بيولوجي',
+    geology: 'جيولوجيا',
+    'chem-biochem': 'برنامج الكيمياء والكيمياء الحيوية',
+    'chem-industrial': 'برنامج الكيمياء التطبيقية الصناعية',
+    'nuclear-physics': 'برنامج الفيزياء النووية والمفاعلات',
+    'rad-physics': 'برنامج الفيزياء الإشعاعية والطبية',
+    biotech: 'برنامج التكنولوجيا الحيوية والكيمياء الحيوية الجزيئية',
+    'micro-biochem': 'برنامج الميكروبيولوجي والكيمياء الحيوية',
+    'smart-computing': 'برنامج الحوسبة الذكية',
+    'bio-analysis': 'برنامج التحاليل البيولوجية والكيمياء',
+};
+const KIND_AR = { exam: 'امتحان سابق', lecture: 'محاضرة', slides: 'سلايدات الدكتور', book: 'كتاب الكلية', other: 'أخرى' };
+const YEAR_AR = { 1: 'السنة الأولى', 2: 'السنة الثانية', 3: 'السنة الثالثة', 4: 'السنة الرابعة' };
+
+let catalogCache = { at: 0, text: '' };
+async function fileCatalog(env) {
+    if (catalogCache.text && Date.now() - catalogCache.at < 300_000) return catalogCache.text;
+    try {
+        const r = await fetch(`${env.SUPA_URL}/rest/v1/files?status=eq.live&select=faculty,department,year,course_code,title,kind&order=created_at.desc&limit=120`, {
+            headers: { apikey: env.SUPA_KEY, Authorization: `Bearer ${env.SUPA_KEY}` },
+        });
+        if (!r.ok) return catalogCache.text;
+        const rows = await r.json();
+        let text;
+        if (!Array.isArray(rows) || !rows.length) {
+            text = 'لا توجد ملفات مرفوعة حتى الآن؛ تُضاف تباعًا.';
+        } else {
+            const lines = rows.map((f) => `- ${f.course_code}: ${f.title} (${KIND_AR[f.kind] || f.kind}، ${DEPT_AR[f.department] || f.department}، ${YEAR_AR[f.year] || f.year}، ${FACULTY_AR[f.faculty] || f.faculty})`);
+            text = `عدد الملفات المتاحة الآن ${rows.length}:\n${lines.join('\n')}`;
+        }
+        catalogCache = { at: Date.now(), text };
+    } catch { /* keep the cached/empty catalog */ }
+    return catalogCache.text;
+}
 
 const MAX_MESSAGES = 20;
 const MAX_CHARS = 2000;
@@ -204,12 +269,13 @@ async function handleUpload(request, env) {
         return json({ error: 'نوع الملف غير مدعوم. PDF أو ملفات Office أو صور فقط.' }, 400);
     }
     const faculty = cleanText(form.get('faculty'), 50);
+    const category = cleanText(form.get('category'), 20) || 'basic';
     const department = cleanText(form.get('department'), 100);
     const year = Number(form.get('year'));
     const course = cleanText(form.get('course_code'), 150);
     const title = cleanText(form.get('title'), 200) || cleanText(file.name, 200);
     const kind = cleanText(form.get('kind'), 20);
-    if (!faculty || !department || !(year >= 1 && year <= 4) || !course || !FILE_KINDS.has(kind)) {
+    if (!faculty || !department || !['basic', 'special'].includes(category) || !(year >= 1 && year <= 4) || !course || !FILE_KINDS.has(kind)) {
         return json({ error: 'أكمل كل الحقول المطلوبة.' }, 400);
     }
 
@@ -230,7 +296,7 @@ async function handleUpload(request, env) {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
-            faculty, department, year,
+            faculty, department, year, category,
             course_code: course, title, kind,
             b2_key: key, size_bytes: file.size,
             uploaded_by: user.id, status: 'live',
@@ -345,6 +411,30 @@ async function handleAgent(request, env) {
         return json({ error: 'no user message' }, 400);
     }
 
+    const catalog = await fileCatalog(env);
+    const systemPrompt = SYSTEM_PROMPT.replace('{CATALOG}', catalog || 'تعذر تحميل قائمة الملفات الآن.');
+
+    /* Primary brain: Gemini (free tier). Falls back to the Groq chain when the
+       key is missing or the quota/errors kick in. */
+    if (env.GEMINI_API_KEY) {
+        try {
+            const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+                body: JSON.stringify({
+                    system_instruction: { parts: [{ text: systemPrompt }] },
+                    contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+                    generationConfig: { maxOutputTokens: 1200, temperature: 0.4 },
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('').trim();
+                if (text) return json({ text, sources: [] });
+            }
+        } catch { /* fall through to Groq */ }
+    }
+
     const models = (env.MODELS || 'openai/gpt-oss-120b,qwen/qwen3.8-27b').split(',');
     for (const model of models) {
         try {
@@ -356,8 +446,8 @@ async function handleAgent(request, env) {
                 },
                 body: JSON.stringify({
                     model: model.trim(),
-                    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...history],
-                    max_tokens: 800,
+                    messages: [{ role: 'system', content: systemPrompt }, ...history],
+                    max_tokens: 1200,
                     temperature: 0.4,
                 }),
             });

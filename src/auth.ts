@@ -169,6 +169,39 @@ export async function refreshSession(): Promise<void> {
 
 export function signOut() { setSession(null); }
 
+/* Access tokens live about an hour. Every API call goes through
+   ensureFreshToken: it reads the JWT exp, renews with the refresh token when
+   expired or within a minute of expiring, dedupes concurrent renewals, and
+   drops the session cleanly (back to sign-in) when renewal fails. */
+function tokenExp(at: string): number {
+    try {
+        const p = JSON.parse(atob(at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return typeof p.exp === 'number' ? p.exp : 0;
+    } catch { return 0; }
+}
+
+let refreshing: Promise<string> | null = null;
+export async function ensureFreshToken(): Promise<string> {
+    const s = session;
+    if (!s) throw new Error('سجّل دخولك أولًا.');
+    const exp = tokenExp(s.access_token);
+    if (exp && exp - Date.now() / 1000 > 60) return s.access_token;
+    if (!refreshing) {
+        refreshing = (async () => {
+            try {
+                const data = await api('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh_token });
+                const u = await loadProfile(data.access_token, data.user);
+                setSession({ access_token: data.access_token, refresh_token: data.refresh_token, user: u });
+                return data.access_token as string;
+            } catch {
+                setSession(null);
+                throw new Error('انتهت جلستك. سجّل الدخول من جديد.');
+            } finally { refreshing = null; }
+        })();
+    }
+    return refreshing;
+}
+
 /* ---------- Profile avatar (Supabase Storage, private bucket) ----------
    Bucket 'avatars' is private with owner-only RLS: a student can read and
    write only <their-uid>/ inside it. Reads therefore need the session token;
@@ -179,9 +212,10 @@ const AVATAR_BUCKET = 'avatars';
 export async function uploadAvatar(blob: Blob): Promise<string> {
     if (!session) throw new Error('سجّل دخولك أولًا.');
     const path = `${session.user.id}/avatar.webp`;
+    const at = await ensureFreshToken();
     const r = await fetch(`${SUPA_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
         method: 'POST',
-        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'image/webp', 'x-upsert': 'true' },
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}`, 'Content-Type': 'image/webp', 'x-upsert': 'true' },
         body: blob,
     });
     if (!r.ok) throw new Error('تعذر رفع الصورة. أعد المحاولة.');
@@ -192,18 +226,20 @@ export async function uploadAvatar(blob: Blob): Promise<string> {
 export async function removeAvatar(): Promise<void> {
     if (!session || !session.user.avatarPath) return;
     const path = session.user.avatarPath;
+    const at = await ensureFreshToken();
     await fetch(`${SUPA_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
         method: 'DELETE',
-        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}` },
     }).catch(() => {});
     await saveAvatarPath(null);
 }
 
 async function saveAvatarPath(path: string | null): Promise<void> {
     if (!session) return;
+    const at = await ensureFreshToken();
     const r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${session.user.id}`, {
         method: 'PATCH',
-        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
         body: JSON.stringify({ avatar_path: path }),
     });
     if (!r.ok) throw new Error('تعذر حفظ الصورة في الملف الشخصي.');
@@ -218,8 +254,9 @@ export async function fetchAvatarUrl(path: string): Promise<string | null> {
     const hit = avatarCache.get(key);
     if (hit) return hit;
     try {
+        const at = await ensureFreshToken();
         const r = await fetch(`${SUPA_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
-            headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+            headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}` },
         });
         if (!r.ok) return null;
         const url = URL.createObjectURL(await r.blob());
