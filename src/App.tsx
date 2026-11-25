@@ -952,6 +952,7 @@ function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
         {ready && <div className="azu-contact-lines" dir="rtl">
             <p className="azu-contact-line"><Icon name="mail" size={16} /> <span>البريد الإلكتروني:</span> <a href={`mailto:${CONTACT_EMAIL}`} dir="ltr">{CONTACT_EMAIL}</a></p>
             <p className="azu-contact-line"><Icon name="whatsapp" size={16} /> <span>واتساب:</span> <a href="https://wa.me/201225728551" target="_blank" rel="noreferrer" dir="ltr">+20 122 572 8551</a></p>
+            <p className="azu-contact-line"><Icon name="facebook" size={16} /> <span>فيسبوك:</span> <a href="https://www.facebook.com/share/19qWhxdbVs/" target="_blank" rel="noreferrer" dir="ltr">facebook.com/share/19qWhxdbVs</a></p>
         </div>}
         <div className="azu-form" dir="rtl">
             <label className="azu-field">الاسم
