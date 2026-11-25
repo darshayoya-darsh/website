@@ -340,9 +340,11 @@ async function handleDelete(request, env) {
         return json({ error: 'ليس لديك صلاحية على هذا النطاق.' }, 403);
     }
 
-    await b2DeleteByName(env, row.b2_key).catch(() => {});
+    // DB row first (RLS enforces scope), then the object; a failed object
+    // delete leaves an invisible orphan, not a dangling public record.
     const del = await restFiles(env, token, `?id=eq.${id}`, { method: 'DELETE' });
     if (!del.ok) return json({ error: 'تعذر حذف السجل. أعد المحاولة.' }, 500);
+    await b2DeleteByName(env, row.b2_key).catch(() => {});
     return json({ ok: true });
 }
 
@@ -383,32 +385,17 @@ async function handleAgent(request, env) {
         return json({ text: 'عدد الطلبات كبير الآن. جرّب مرة أخرى بعد قليل.', sources: [] }, 200);
     }
 
-    // POST carries { messages: [{role, text}] } in the body. GET /?m= carries
-    // a compact [[role, text], ...] in the query for networks that drop
-    // cross-site POST bodies (observed on some mobile carriers).
+    // POST carries { messages: [{role, text}] } in the body. No GET variant:
+    // conversation text must never appear in a URL (logs, history).
+    if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
     let raw = [];
-    if (request.method === 'POST') {
-        let body;
-        try {
-            body = await request.json();
-        } catch {
-            return json({ error: 'invalid json' }, 400);
-        }
-        raw = Array.isArray(body?.messages) ? body.messages : [];
-    } else {
-        const m = new URL(request.url).searchParams.get('m');
-        if (!m) return json({ error: 'method not allowed' }, 405);
-        try {
-            const pairs = JSON.parse(m);
-            if (Array.isArray(pairs)) {
-                raw = pairs
-                    .filter((p) => Array.isArray(p) && typeof p[0] === 'string' && typeof p[1] === 'string')
-                    .map((p) => ({ role: p[0], text: p[1] }));
-            }
-        } catch {
-            return json({ error: 'invalid json' }, 400);
-        }
+    let body;
+    try {
+        body = await request.json();
+    } catch {
+        return json({ error: 'invalid json' }, 400);
     }
+    raw = Array.isArray(body?.messages) ? body.messages : [];
 
     const history = raw
         .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.text === 'string')

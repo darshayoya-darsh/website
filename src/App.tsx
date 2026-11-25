@@ -412,7 +412,7 @@ function FacultyPage({ faculty }: { faculty: Faculty }) {
             <Link to={`/academic/${faculty.id}/special`} className="azu-choice">
                 <span className="azu-choice-icon"><Icon name="spark" size={28} /></span>
                 <span className="azu-choice-title" dir="rtl">برامج متميزة</span>
-                <span className="azu-choice-text">8 برامج بنظام الساعات المعتمدة والدراسة بالإنجليزية — من الكيمياء الحيوية للحوسبة الذكية.</span>
+                <span className="azu-choice-text">{PROGRAMS.length} برامج بنظام الساعات المعتمدة والدراسة بالإنجليزية — من الكيمياء الحيوية للحوسبة الذكية.</span>
                 <span className="azu-card-arrow"><Icon name="arrow" size={15} /></span>
             </Link>
         </Reveal>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CopyButton } from '@instinct/files';
-import { agentProvider, AgentMessage } from './agent';
+import { agentProvider, AgentMessage, AgentSource } from './agent';
 
 /* The Instinct File viewer renders the page in a full-height frame where
    position:fixed follows the page, not the screen (web build sets no flag and
@@ -68,21 +68,21 @@ export function AgentChat() {
         const q = text.trim();
         if (!q || busy) return;
         const userMsg: AgentMessage = { id: nextId('u'), role: 'user', text: q };
-        setMessages(m => [...m, userMsg]);
+        setMessages((m: AgentMessage[]) => [...m, userMsg]);
         setDraft('');
         setBusy(true);
         try {
             const reply = await agentProvider.send([...messages, userMsg]);
-            setMessages(m => [...m, { id: nextId('a'), role: 'assistant', text: reply.text, sources: reply.sources }]);
+            setMessages((m: AgentMessage[]) => [...m, { id: nextId('a'), role: 'assistant', text: reply.text, sources: reply.sources }]);
         } catch {
-            setMessages(m => [...m, { id: nextId('a'), role: 'assistant', text: 'تعذر الاتصال بالمساعد الآن. تأكد من اتصالك بالإنترنت، ثم حاول مرة أخرى.' }]);
+            setMessages((m: AgentMessage[]) => [...m, { id: nextId('a'), role: 'assistant', text: 'تعذر الاتصال بالمساعد الآن. تأكد من اتصالك بالإنترنت، ثم حاول مرة أخرى.' }]);
         } finally {
             setBusy(false);
         }
     };
 
     return <>
-        {!isFileEnv() && <button type="button" className="azu-agent-fab" aria-label="مساعد AZU Science الذكي" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        {!isFileEnv() && <button type="button" className="azu-agent-fab" aria-label="مساعد AZU Science الذكي" aria-expanded={open} onClick={() => setOpen((o: boolean) => !o)}>
             <AgentIcon name={open ? 'close' : 'spark'} size={open ? 22 : 26} />
         </button>}
         <dialog ref={dialogRef} className="azu-agent" aria-label="مساعد AZU Science الذكي"
@@ -101,26 +101,26 @@ export function AgentChat() {
                     {messages.length === 0 && <div className="azu-agent-chips" dir="rtl">
                         {SUGGESTIONS.map(s => <button key={s} type="button" className="azu-agent-chip" onClick={() => send(s)}>{s}</button>)}
                     </div>}
-                    {messages.map(m => <div key={m.id} className={`azu-agent-msg ${m.role}`}>
+                    {messages.map((m: AgentMessage) => <div key={m.id} className={`azu-agent-msg ${m.role}`}>
                         <div className="azu-agent-bubble" dir="auto">{m.text}</div>
                         {m.role === 'assistant' && <>
                             {m.sources && m.sources.length > 0 && <div className="azu-agent-sources" dir="rtl">
-                                {m.sources.map(s => s.url
+                                {m.sources.map((s: AgentSource) => s.url
                                     ? <a key={s.title} className="azu-agent-src" href={s.url} target="_blank" rel="noreferrer"><AgentIcon name="link" size={12} /> {s.title}</a>
                                     : <span key={s.title} className="azu-agent-src"><AgentIcon name="link" size={12} /> {s.title}</span>)}
                             </div>}
                             <div className="azu-agent-actions" dir="ltr">
                                 <CopyButton text={m.text} label="نسخ" compact />
                                 <button type="button" title="إجابة مفيدة" aria-label="إجابة مفيدة" className={rated[m.id] === 'up' ? 'on' : ''}
-                                    onClick={() => setRated(r => { const n = { ...r }; if (n[m.id] === 'up') delete n[m.id]; else n[m.id] = 'up'; return n; })}>
+                                    onClick={() => setRated((r: Record<string, 'up' | 'down'>) => { const n = { ...r }; if (n[m.id] === 'up') delete n[m.id]; else n[m.id] = 'up'; return n; })}>
                                     <AgentIcon name="up" size={14} />
                                 </button>
                                 <button type="button" title="إجابة غير مفيدة" aria-label="إجابة غير مفيدة" className={rated[m.id] === 'down' ? 'on' : ''}
-                                    onClick={() => setRated(r => { const n = { ...r }; if (n[m.id] === 'down') delete n[m.id]; else n[m.id] = 'down'; return n; })}>
+                                    onClick={() => setRated((r: Record<string, 'up' | 'down'>) => { const n = { ...r }; if (n[m.id] === 'down') delete n[m.id]; else n[m.id] = 'down'; return n; })}>
                                     <AgentIcon name="down" size={14} />
                                 </button>
                                 <button type="button" title="الإبلاغ عن معلومة غير دقيقة" aria-label="الإبلاغ عن معلومة غير دقيقة" className={reported[m.id] ? 'on' : ''}
-                                    onClick={() => setReported(r => ({ ...r, [m.id]: !r[m.id] }))}>
+                                    onClick={() => setReported((r: Record<string, boolean>) => ({ ...r, [m.id]: !r[m.id] }))}>
                                     <AgentIcon name="flag" size={14} />
                                 </button>
                             </div>

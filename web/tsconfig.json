@@ -10,7 +10,15 @@
     "noEmit": true,
     "allowJs": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@instinct/files": ["src/platform-shim.tsx"],
+      "react": ["node_modules/@types/react"],
+      "react/jsx-runtime": ["node_modules/@types/react/jsx-runtime"],
+      "react-dom/client": ["node_modules/@types/react-dom/client"],
+      "react-router-dom": ["node_modules/@types"]
+    }
   },
   "include": ["src", "../src"]
 }

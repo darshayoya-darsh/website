@@ -4,6 +4,13 @@ import React from 'react';
 
 export { Link, NavLink, Route, Routes } from 'react-router-dom';
 
+/* The File-platform entry (src/main.tsx) renders <FileRouter>; on the
+   standalone build that is just the app router with its Pages basename. */
+import { BrowserRouter } from 'react-router-dom';
+export function FileRouter({ children }: { children: React.ReactNode }) {
+    return <BrowserRouter basename="/website">{children}</BrowserRouter>;
+}
+
 export function FileCard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }

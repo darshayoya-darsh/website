@@ -47,17 +47,7 @@ class HttpProvider implements AgentProvider {
                 if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
             }
         }
-        // Some mobile networks drop cross-site POST bodies; fall back to a GET
-        // with a compact query payload (recent messages only, trimmed).
-        const compact = history.slice(-3).map(({ role, text }) => [role, text.slice(0, 800)]);
-        let qs = encodeURIComponent(JSON.stringify(compact));
-        if (qs.length > 1800 && history.length) {
-            const last = history[history.length - 1];
-            qs = encodeURIComponent(JSON.stringify([[last.role, last.text.slice(0, 1500)]]));
-        }
-        const res = await fetch(`${this.endpoint}?m=${qs}`, { signal });
-        if (!res.ok) throw lastError ?? new Error(`agent endpoint returned ${res.status}`);
-        return res.json();
+        throw lastError ?? new Error('agent unreachable');
     }
 }
 

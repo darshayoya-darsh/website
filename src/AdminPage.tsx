@@ -271,7 +271,7 @@ function AccountsSection({ grants }: { grants: Grant[] }) {
     }, []);
 
     const needle = q.trim().toLowerCase();
-    const shown = (accounts || []).filter((a) => !needle
+    const shown = (accounts || []).filter((a: AccountRow) => !needle
         || (a.full_name || '').toLowerCase().includes(needle)
         || (a.email || '').toLowerCase().includes(needle));
 
@@ -295,7 +295,7 @@ function AccountsSection({ grants }: { grants: Grant[] }) {
         {err && <p className="azu-admin-err" role="alert">{err}</p>}
         {!accounts && !err && <p className="azu-admin-note">لحظات…</p>}
         <div className="azu-admin-grants">
-            {shown.map((a) => {
+            {shown.map((a: AccountRow) => {
                 const grant = grants.find((g) => g.email === a.email);
                 return <div key={a.id} className="azu-admin-row">
                     <div className="azu-admin-row-main">

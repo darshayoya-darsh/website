@@ -462,4 +462,4 @@ export const YEAR_NAMES: Record<number, string> = { 1: 'السنة الأولى'
 export const TERM_NAMES: Record<number, string> = { 1: 'الفصل الدراسي الأول', 2: 'الفصل الدراسي الثاني' };
 
 /* Destination for Contact / Report messages; empty until an official address is set. */
-export const CONTACT_EMAIL = 'darsh.nassar.cr7@gmail.com';
+export const CONTACT_EMAIL: string = 'darsh.nassar.cr7@gmail.com';
