@@ -36,6 +36,7 @@ export function Icon({ name, size = 24 }: { name: string; size?: number }) {
         case 'menu': return <svg {...p}><path d="M4 7h16M4 12h16M4 17h16" /></svg>;
         case 'close': return <svg {...p}><path d="M18 6L6 18M6 6l12 12" /></svg>;
         case 'mail': return <svg {...p}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 6L2 7" /></svg>;
+        case 'whatsapp': return <svg {...p}><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.4A8.5 8.5 0 1 1 21 11.5z" /><path d="M9 9.5c.5 2.5 3 5 5.5 5.5l1-1.5c.2-.3.6-.4.9-.2l1.5.8" transform="translate(0 .5) scale(.92)" /></svg>;
         default: return null;
     }
 }

@@ -935,32 +935,38 @@ function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
     const [from, setFrom] = React.useState('');
     const [msg, setMsg] = React.useState('');
     const ready = CONTACT_EMAIL !== '';
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!ready) return;
+    /* Click + Enter handlers, never <form> submit: the File viewer iframe
+       sandbox blocks form submissions (no allow-forms). */
+    const submit = () => {
+        if (!ready || !name.trim() || !msg.trim()) return;
         const subject = isReport ? 'بلاغ عن مشكلة — AZU Science' : 'رسالة من منصة AZU Science';
         const page = isReport ? `\n\nالصفحة: ${window.location.href}` : '';
         const body = `الاسم: ${name}\nالبريد: ${from}\n\n${msg}${page}`;
         window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     };
+    const enter = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') submit(); };
     return <section className="azu-section azu-flow">
         <Crumb items={[{ label: 'Home', to: '/' }, { label: isReport ? 'Report an Issue' : 'Contact Us' }]} />
         <div className="azu-kicker">{isReport ? 'REPORT AN ISSUE' : 'CONTACT US'}</div>
         <h2 className="azu-title" dir="rtl">{isReport ? 'الإبلاغ عن مشكلة' : 'تواصل معنا'}</h2>
-        <form className="azu-form" dir="rtl" onSubmit={submit}>
+        {ready && <div className="azu-contact-lines" dir="rtl">
+            <p className="azu-contact-line"><Icon name="mail" size={16} /> <span>البريد الإلكتروني:</span> <a href={`mailto:${CONTACT_EMAIL}`} dir="ltr">{CONTACT_EMAIL}</a></p>
+            <p className="azu-contact-line"><Icon name="whatsapp" size={16} /> <span>واتساب:</span> <a href="https://wa.me/201225728551" target="_blank" rel="noreferrer" dir="ltr">+20 122 572 8551</a></p>
+        </div>}
+        <div className="azu-form" dir="rtl">
             <label className="azu-field">الاسم
-                <input className="azu-input" value={name} onChange={e => setName(e.target.value)} required disabled={!ready} />
+                <input className="azu-input" value={name} onChange={e => setName(e.target.value)} onKeyDown={enter} disabled={!ready} />
             </label>
             <label className="azu-field">بريدك الإلكتروني (اختياري)
-                <input className="azu-input" type="email" dir="ltr" value={from} onChange={e => setFrom(e.target.value)} disabled={!ready} />
+                <input className="azu-input" type="email" dir="ltr" value={from} onChange={e => setFrom(e.target.value)} onKeyDown={enter} disabled={!ready} />
             </label>
             <label className="azu-field">{isReport ? 'وصف المشكلة' : 'رسالتك'}
-                <textarea className="azu-input azu-textarea" rows={5} value={msg} onChange={e => setMsg(e.target.value)} required disabled={!ready} />
+                <textarea className="azu-input azu-textarea" rows={5} value={msg} onChange={e => setMsg(e.target.value)} disabled={!ready} />
             </label>
             {ready
-                ? <button type="submit" className="azu-btn azu-btn-primary"><Icon name="mail" size={15} /> إرسال</button>
+                ? <button type="button" className="azu-btn azu-btn-primary" onClick={submit} disabled={!name.trim() || !msg.trim()}><Icon name="mail" size={15} /> إرسال</button>
                 : <span className="azu-tag">قريبًا</span>}
-        </form>
+        </div>
     </section>;
 }
 
