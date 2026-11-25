@@ -61,6 +61,26 @@ function consumeHashSession() {
 }
 consumeHashSession();
 
+/* A stored session can go stale when the profile changes server-side (e.g. an
+   account is made admin). Re-validate on startup and refresh the profile so
+   role changes apply on the next app load, without a sign-out. If the access
+   token expired, renew it with the refresh token first. */
+function refreshStoredSession() {
+    const s = session;
+    if (!s) return;
+    const applyUser = (at: string, rt: string) =>
+        fetch(`${SUPA_URL}/auth/v1/user`, { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}` } })
+            .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+            .then((u) => loadProfile(at, u))
+            .then((u) => { if (session && session.refresh_token === rt) setSession({ access_token: at, refresh_token: rt, user: u }); });
+    applyUser(s.access_token, s.refresh_token).catch(() => {
+        api('/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh_token })
+            .then((data) => applyUser(data.access_token, data.refresh_token))
+            .catch(() => { /* keep the stale session; the next sign-in refreshes it */ });
+    });
+}
+refreshStoredSession();
+
 export function hasAccountFlag(): boolean {
     try { return !!localStorage.getItem(HAS_ACCOUNT_KEY); } catch { return false; }
 }
