@@ -1,10 +1,13 @@
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 400; font-display: swap; src: url('./fonts/almarai-400.woff2') format('woff2'); }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 700; font-display: swap; src: url('./fonts/almarai-700.woff2') format('woff2'); }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 800; font-display: swap; src: url('./fonts/almarai-800.woff2') format('woff2'); }
 /* AZU Science — page styles (prefix azu-) — v2 overhaul */
 
 .azu-page {
     margin: -24px;
     background: #f5f0e6;
     color: #22302d;
-    font-family: var(--ds-font-text);
+    font-family: "KMR Melange Grotesk", 'Almarai', -apple-system, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.55;
     overflow-x: hidden;
 }
@@ -45,7 +48,7 @@
 .azu-brand-logo { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; box-shadow: 0 3px 10px rgba(12,58,52,.18); transition: transform .3s ease; }
 .azu-brand:hover .azu-brand-logo { transform: rotate(-6deg) scale(1.05); }
 .azu-brand-text { display: flex; flex-direction: column; }
-.azu-brand-name { font-family: var(--ds-font-display); font-size: 20px; color: #0c3a34; }
+.azu-brand-name { font-family: Aime, 'Almarai', Georgia, serif; font-size: 20px; color: #0c3a34; }
 .azu-brand-sub { font-size: 11px; color: #6a7370; }
 .azu-nav { display: flex; gap: 18px; flex-wrap: wrap; margin-inline-start: auto; }
 .azu-nav a, .azu-nav a:visited {
@@ -100,7 +103,7 @@
 .azu-eyebrow { font-size: 11.5px; letter-spacing: .26em; font-weight: 600; color: #d8c98f; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
 .azu-eyebrow::before { content: ""; width: 34px; height: 1.5px; background: #c9a24b; }
 .azu-hero-title {
-    font-family: var(--ds-font-display); font-weight: 400;
+    font-family: Aime, 'Almarai', Georgia, serif; font-weight: 400;
     font-size: 58px; line-height: 1.04; margin: 0 0 10px;
     text-shadow: 0 4px 30px rgba(0,0,0,.35);
 }
@@ -112,7 +115,7 @@
 .azu-scroll svg { animation: azu-bob 1.8s ease-in-out infinite; }
 .azu-hero-quote {
     position: absolute; inset-inline-end: 36px; bottom: 34px; z-index: 1;
-    font-family: var(--ds-font-display); font-size: 17px; line-height: 1.55;
+    font-family: Aime, 'Almarai', Georgia, serif; font-size: 17px; line-height: 1.55;
     color: #f0ead9; text-align: end; text-shadow: 0 2px 10px rgba(0,0,0,.5);
     animation: azu-fade 1.4s .7s both;
 }
@@ -149,7 +152,7 @@
 .azu-kicker { font-size: 11px; letter-spacing: .22em; font-weight: 600; color: #146b5d; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
 .azu-kicker::after { content: ""; width: 34px; height: 1.5px; background: #c9a24b; }
 .azu-kicker-light { color: #8fd4c2; }
-.azu-title { font-family: var(--ds-font-display); font-weight: 400; font-size: 32px; color: #0c3a34; margin: 0 0 8px; }
+.azu-title { font-family: Aime, 'Almarai', Georgia, serif; font-weight: 400; font-size: 32px; color: #0c3a34; margin: 0 0 8px; }
 @media (min-width: 768px) { .azu-title { font-size: 37px; } }
 .azu-lead { font-size: 14px; color: #6a7370; margin: 0; }
 .azu-words { font-size: 10.5px; letter-spacing: .2em; color: #a49d8b; }
@@ -176,7 +179,7 @@
     transition: transform .3s ease, background .3s ease;
 }
 .azu-card:hover .azu-card-icon { transform: scale(1.08) rotate(-4deg); background: linear-gradient(135deg, #d3e5de, #c4dcd2); }
-.azu-card-title { font-family: var(--ds-font-display); font-size: 21px; color: #0c3a34; margin-bottom: 9px; }
+.azu-card-title { font-family: Aime, 'Almarai', Georgia, serif; font-size: 21px; color: #0c3a34; margin-bottom: 9px; }
 .azu-card-text { font-size: 13px; color: #6a7370; margin: 0; }
 .azu-card-water {
     position: absolute; bottom: -18px; inset-inline-end: -14px;
@@ -208,7 +211,7 @@
 .azu-stat:first-child { border-inline-start: none; }
 @media (max-width: 859px) { .azu-stat:nth-child(odd) { border-inline-start: none; } }
 .azu-stat svg { color: #8fd4c2; }
-.azu-stat-value { font-family: var(--ds-font-display); font-size: 32px; margin-top: 10px; text-shadow: 0 2px 12px rgba(0,0,0,.3); }
+.azu-stat-value { font-family: Aime, 'Almarai', Georgia, serif; font-size: 32px; margin-top: 10px; text-shadow: 0 2px 12px rgba(0,0,0,.3); }
 .azu-stat-label { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: #a9c4bb; margin-top: 2px; }
 
 /* ===== News ===== */
@@ -225,7 +228,7 @@
 .azu-news-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
 .azu-chip { background: linear-gradient(135deg, #177a68, #0f5a4e); color: #fff; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; border-radius: 5px; padding: 4px 10px; box-shadow: 0 2px 6px rgba(15,90,78,.3); }
 .azu-news-date { font-size: 11.5px; color: #8a8375; }
-.azu-news-title { font-family: var(--ds-font-display); font-size: 18px; color: #0c3a34; margin-bottom: 7px; }
+.azu-news-title { font-family: Aime, 'Almarai', Georgia, serif; font-size: 18px; color: #0c3a34; margin-bottom: 7px; }
 .azu-news-text { font-size: 12.5px; color: #6a7370; margin: 0 0 14px; }
 .azu-news-more { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #146b5d; }
 .azu-news-more svg { transition: transform .25s ease; }
@@ -252,11 +255,11 @@
 @media (min-width: 768px) { .azu-about { padding: 72px 44px; } }
 @media (min-width: 860px) { .azu-about { grid-template-columns: 1fr 1.2fr; gap: 44px; } }
 .azu-about-left { border-inline-start: 3px solid #c9a24b; padding-inline-start: 20px; }
-.azu-about-title { font-family: var(--ds-font-display); font-weight: 400; font-size: 36px; line-height: 1.18; margin: 0; }
+.azu-about-title { font-family: Aime, 'Almarai', Georgia, serif; font-weight: 400; font-size: 36px; line-height: 1.18; margin: 0; }
 @media (min-width: 768px) { .azu-about-title { font-size: 42px; } }
 .azu-about-right p { font-size: 14.5px; color: #d5dacf; max-width: 480px; margin: 8px 0 24px; }
 .azu-about-quote {
-    font-family: var(--ds-font-display); font-size: 16px; color: #8fd4c2;
+    font-family: Aime, 'Almarai', Georgia, serif; font-size: 16px; color: #8fd4c2;
     grid-column: 1 / -1; text-align: end; opacity: .92;
 }
 
@@ -269,7 +272,7 @@
 @media (min-width: 768px) { .azu-footer-grid { padding: 52px 44px 36px; grid-template-columns: 1.4fr 1fr 1fr 1fr; } }
 .azu-footer-brand { display: flex; gap: 14px; align-items: flex-start; }
 .azu-footer-logo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(12,58,52,.2); }
-.azu-footer-name { font-family: var(--ds-font-display); font-size: 19px; color: #0c3a34; }
+.azu-footer-name { font-family: Aime, 'Almarai', Georgia, serif; font-size: 19px; color: #0c3a34; }
 .azu-footer-tag { font-size: 12px; color: #6a7370; margin-top: 4px; }
 .azu-footer-col { display: flex; flex-direction: column; gap: 9px; font-size: 13px; }
 .azu-footer-head { font-weight: 600; color: #0c3a34; margin-bottom: 5px; font-size: 13.5px; letter-spacing: .03em; }
@@ -381,7 +384,7 @@
 }
 .azu-year:hover { transform: translateY(-6px); box-shadow: 0 18px 38px rgba(12,58,52,.15); border-color: #d9cfb2; }
 .azu-year:active { transform: translateY(-2px) scale(.97); }
-.azu-year-num { font-family: var(--ds-font-display); font-size: 42px; color: #146b5d; line-height: 1; transition: transform .3s ease; }
+.azu-year-num { font-family: Aime, 'Almarai', Georgia, serif; font-size: 42px; color: #146b5d; line-height: 1; transition: transform .3s ease; }
 .azu-year:hover .azu-year-num { transform: scale(1.14); }
 .azu-year-name { font-size: 14px; font-weight: 600; color: #0c3a34; }
 .azu-year .azu-card-arrow { inset-inline-start: 50%; transform: translateX(-50%); bottom: 18px; }
@@ -420,7 +423,7 @@
 .azu-callout-title::before { content: ""; width: 16px; height: 2px; background: #c9a24b; border-radius: 2px; }
 .azu-callout p { margin: 0; font-size: 13.5px; color: #6b5f3a; line-height: 1.75; }
 .azu-block { margin-top: 34px; }
-.azu-subtitle { font-family: var(--ds-font-display); font-weight: 400; font-size: 26px; color: #0c3a34; margin: 0 0 18px; }
+.azu-subtitle { font-family: Aime, 'Almarai', Georgia, serif; font-weight: 400; font-size: 26px; color: #0c3a34; margin: 0 0 18px; }
 .azu-minihead { font-size: 13px; font-weight: 700; color: #146b5d; letter-spacing: .02em; margin: 18px 0 10px; display: flex; align-items: center; gap: 9px; }
 .azu-minihead::before { content: ""; width: 14px; height: 2px; background: #c9a24b; border-radius: 2px; }
 .azu-ticks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -490,7 +493,7 @@
 .azu-vs-col { background: #fffdf7; border: 1px solid #eae2cd; border-radius: 14px; padding: 20px 22px; box-shadow: 0 4px 14px rgba(12,58,52,.06); height: 100%; }
 .azu-vs-title { font-size: 15.5px; font-weight: 700; color: #0c3a34; margin-bottom: 10px; }
 .azu-vs-badge {
-    font-family: var(--ds-font-display); font-size: 20px; color: #c9a24b;
+    font-family: Aime, 'Almarai', Georgia, serif; font-size: 20px; color: #c9a24b;
     width: 52px; height: 52px; border-radius: 50%; margin: 0 auto;
     background: #fffdf7; border: 2px solid #c9a24b;
     display: flex; align-items: center; justify-content: center;
