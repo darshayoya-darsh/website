@@ -315,8 +315,9 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'rwaq', name: 'Rwaq', ar: 'رواق', url: 'https://www.rwaq.org/',
-        kind: 'course', access: 'free', level: 'beginner', disc: [],
+        kind: 'course', access: 'registration', level: 'beginner', disc: [],
         about: 'منصة عربية للمقررات المفتوحة، فيها مقررات في مناهج البحث والكتابة الأكاديمية.',
+        note: 'بعض المقررات مدفوعة (مقرر المهارات الأكاديمية مثلًا بسعر 34.5 ريال سعودي)، فاتأكد من صفحة المقرر قبل التسجيل.',
         uses: ['مقررات عربية في مناهج البحث', 'تدريب على الكتابة الأكاديمية', 'مقدمة في الإحصاء والتحليل'],
     },
     {
@@ -440,6 +441,77 @@ export const RESOURCES: Resource[] = [
         uses: ['دوريات في العلوم والبيئة', 'أبحاث تطبيقية', 'إرشادات النشر'],
     },
 ];
+
+/* ---------- Courses ----------
+   Each course page was opened and its free status read from the provider's own
+   pages. Access is stated exactly as the provider states it. */
+
+export type CourseLang = 'ar' | 'en' | 'both';
+export type CourseTopic = 'basics' | 'writing' | 'stats' | 'data';
+export const COURSE_TOPIC: Record<CourseTopic, string> = {
+    basics: 'أساسيات ومنهجية البحث',
+    writing: 'الكتابة والنشر',
+    stats: 'الإحصاء وتحليل البيانات',
+    data: 'برمجة وأدوات البيانات',
+};
+export const COURSE_LANG: Record<CourseLang, string> = { ar: 'عربي', en: 'English', both: 'AR / EN' };
+
+export type Course = {
+    id: string; title: string; provider: string; providerAr: string; url: string;
+    lang: CourseLang; level: ResLevel; access: ResAccess; topic: CourseTopic;
+    about: string; note: string;
+};
+
+export const COURSES: Course[] = [
+    {
+        id: 'c-arps-method', title: 'برامج منهجية البحث العلمي (دبلوم قصير وإعداد أخصائي)', provider: 'ARPS', providerAr: 'المنصة العربية للدراسات المهنية',
+        url: 'https://arps.cc/ar/domains/k14/', lang: 'both', level: 'beginner', access: 'free', topic: 'basics',
+        about: 'برامج في منهجية البحث العلمي والبحث النوعي ومراجعة الأدبيات والتفكير النقدي، بالعربي والإنجليزي.',
+        note: 'كل الدروس والتمارين مجانية والشهادة اختيارية، حسب صفحة المنصة.',
+    },
+    {
+        id: 'c-edraak-prbs', title: 'Principles of Research in Biological Sciences', provider: 'Edraak', providerAr: 'إدراك',
+        url: 'https://www.edraak.org/en/programs/course/prbs100-v2018-sp-2/', lang: 'ar', level: 'beginner', access: 'free', topic: 'basics',
+        about: 'مقدمة في مبادئ البحث في العلوم البيولوجية من منصة إدراك.',
+        note: 'إدراك بتوضح إن الاشتراك في أي دورة مجاني، ومعاه شهادة مجانية.',
+    },
+    {
+        id: 'c-elsevier-ra', title: 'Elsevier Researcher Academy', provider: 'Elsevier', providerAr: 'إلسيفير',
+        url: 'https://researcheracademy.elsevier.com/', lang: 'en', level: 'intermediate', access: 'free', topic: 'writing',
+        about: 'مسار كامل: تحضير البحث، الكتابة، عملية النشر، مراجعة الأقران، وتوصيل البحث. أكتر من 140 وحدة.',
+        note: 'الموقع نفسه بيوصفها كموارد تعلم إلكتروني مجانية.',
+    },
+    {
+        id: 'c-ocw-1805', title: 'Introduction to Probability and Statistics (18.05)', provider: 'MIT OpenCourseWare', providerAr: 'إم آي تي',
+        url: 'https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/', lang: 'en', level: 'intermediate', access: 'open', topic: 'stats',
+        about: 'مقرر جامعي كامل في الاحتمالات والإحصاء: محاضرات وواجبات ومذكرات مفتوحة.',
+        note: 'مواد مفتوحة بدون تسجيل، من غير شهادة.',
+    },
+    {
+        id: 'c-khan-stats', title: 'Statistics and Probability', provider: 'Khan Academy', providerAr: 'خان أكاديمي',
+        url: 'https://www.khanacademy.org/math/statistics-probability', lang: 'en', level: 'beginner', access: 'free', topic: 'stats',
+        about: 'شرح مبسط للإحصاء والاحتمالات بالفيديو والتمارين، مناسب كبداية قبل تحليل بيانات البحث.',
+        note: 'خان أكاديمي منظمة غير ربحية، والمحتوى مجاني.',
+    },
+    {
+        id: 'c-delft-rm', title: 'Multidisciplinary Research Methods for Engineers', provider: 'DelftX on edX', providerAr: 'جامعة دلفت عبر edX',
+        url: 'https://www.edx.org/learn/engineering/delft-university-of-technology-multidisciplinary-research-methods-for-engineers', lang: 'en', level: 'intermediate', access: 'registration', topic: 'basics',
+        about: 'مناهج البحث متعددة التخصصات: تصميم الدراسة وجمع البيانات.',
+        note: 'مسار الاستماع المجاني (Audit) متاح لمدة محدودة، والشهادة والتقييمات مدفوعة، حسب سياسة edX.',
+    },
+    {
+        id: 'c-carpentries', title: 'The Carpentries lessons (Data Carpentry and Software Carpentry)', provider: 'The Carpentries', providerAr: 'ذا كاربنتريز',
+        url: 'https://carpentries.org/lessons/', lang: 'en', level: 'intermediate', access: 'open', topic: 'data',
+        about: 'دروس عملية في Python وR وSQL والـ shell لتنظيف وتحليل بيانات البحث.',
+        note: 'الدروس مرخصة بترخيص Creative Commons وتتاح للجميع.',
+    },
+];
+
+RESOURCES.push(...COURSES.map((c): Resource => ({
+    id: c.id, name: c.title, ar: `${c.providerAr} — ${COURSE_LANG[c.lang]}`, url: c.url,
+    kind: 'course', access: c.access, level: c.level, disc: [],
+    about: c.about, uses: [], note: c.note,
+})));
 
 export const resourceById = (id: string) => RESOURCES.find(r => r.id === id);
 

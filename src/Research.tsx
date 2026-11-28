@@ -5,9 +5,9 @@ import { Reveal, Crumb } from './ui';
 import {
     RESEARCH_DISCIPLINES, RESOURCES, ACADEMY_STAGES, ACADEMY_FORMATS, TOOL_FUNCTIONS,
     JOURNAL_CHECKS, JOURNAL_TYPES, JOURNEY, FEATURED_IDS, ACCESS_LABEL, LEVEL_LABEL, KIND_LABEL,
-    discAr, resourceById, searchResearch,
+    discAr, resourceById, searchResearch, COURSES, COURSE_TOPIC, COURSE_LANG,
 } from './research';
-import type { Resource, ResKind, ResAccess, Discipline } from './research';
+import type { Resource, ResKind, ResAccess, Discipline, CourseLang } from './research';
 
 /* ---------- Small pieces ---------- */
 
@@ -161,6 +161,50 @@ export function ResearchHub() {
     </section>;
 }
 
+function CoursesSection() {
+    const [lang, setLang] = React.useState<'all' | CourseLang>('all');
+    const [lvl, setLvl] = React.useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
+    const list = COURSES.filter(c => (lang === 'all' || c.lang === lang || c.lang === 'both') && (lvl === 'all' || c.level === lvl));
+    const langs: { id: 'all' | CourseLang; t: string }[] = [{ id: 'all', t: 'الكل' }, { id: 'ar', t: 'عربي' }, { id: 'en', t: 'English' }];
+    const lvls: { id: 'all' | 'beginner' | 'intermediate' | 'advanced'; t: string }[] = [
+        { id: 'all', t: 'كل المستويات' }, { id: 'beginner', t: 'مبتدئ' }, { id: 'intermediate', t: 'متوسط' }, { id: 'advanced', t: 'متقدم' },
+    ];
+    return <div id="courses" className="azu-rh-courses">
+        <div className="azu-kicker">COURSES</div>
+        <h3 className="azu-title azu-rh-subtitle">الكورسات</h3>
+        <p className="azu-intro" dir="rtl">
+            كورسات مختارة في مهارات البحث العلمي، كل واحد فتحت صفحته الرسمية وتأكدت من شروط الوصول المجاني بنفسي.
+            لو في شهادة مدفوعة أو مدة وصول محدودة، مكتوب ده على الكارت.
+        </p>
+        <div className="azu-rh-filterrow" dir="rtl">
+            {langs.map(x => <button key={x.id} type="button" className={`azu-rh-fchip${lang === x.id ? ' is-on' : ''}`} onClick={() => setLang(x.id)}>{x.t}</button>)}
+            <span className="azu-rh-fsep" />
+            {lvls.map(x => <button key={x.id} type="button" className={`azu-rh-fchip${lvl === x.id ? ' is-on' : ''}`} onClick={() => setLvl(x.id)}>{x.t}</button>)}
+        </div>
+        {list.length === 0 && <p className="azu-note" dir="rtl">مفيش كورسات بالفلاتر دي لسه.</p>}
+        <div className="azu-rh-courselist">
+            {list.map(c => <div key={c.id} className="azu-rh-res azu-rh-course">
+                <div className="azu-rh-res-top">
+                    <span className="azu-rh-res-icon"><Icon name="cap" size={20} /></span>
+                    <div className="azu-rh-res-names">
+                        <span className="azu-rh-res-name" dir="auto">{c.title}</span>
+                        <span className="azu-rh-res-ar" dir="rtl">{c.providerAr} · {c.provider}</span>
+                    </div>
+                </div>
+                <div className="azu-rh-badges">
+                    <span className="azu-rh-badge azu-rh-kind is-k-index">{COURSE_LANG[c.lang]}</span>
+                    <AccessBadge a={c.access} />
+                    <LevelBadge l={c.level} />
+                </div>
+                <p className="azu-rh-res-about" dir="rtl">{c.about}</p>
+                <div className="azu-rh-res-disc" dir="rtl"><Icon name="target" size={13} />{COURSE_TOPIC[c.topic]}</div>
+                <p className="azu-rh-res-note" dir="rtl">{c.note}</p>
+                <a className="azu-rh-visit" href={c.url} target="_blank" rel="noreferrer">Open Course <Icon name="extlink" size={13} /></a>
+            </div>)}
+        </div>
+    </div>;
+}
+
 /* ---------- 2. Academy ---------- */
 
 export function ResearchAcademy() {
@@ -173,6 +217,7 @@ export function ResearchAcademy() {
             مسار تعليمي متدرج من 7 مراحل: من الطالب اللي ملوش خبرة في البحث، للطالب اللي عنده أساسيات وعايز يطوّرها.
             كل مرحلة ليها هدف واضح ونتيجة المفروض تطلع بيها قبل ما تنتقل للي بعدها.
         </p>
+        <p dir="rtl"><a className="azu-rh-visit" href="#courses" onClick={e => { e.preventDefault(); document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth' }); }}>الكورسات <Icon name="down" size={13} /></a></p>
         <div className="azu-rh-levels">
             {(Object.keys(LEVEL_LABEL) as ('beginner' | 'intermediate' | 'advanced')[]).map(l => <span key={l} className="azu-rh-levelkey">
                 <LevelBadge l={l} /> <span dir="rtl">{l === 'beginner' ? 'تبدأ من هنا' : l === 'intermediate' ? 'بعد الأساسيات' : 'للطلاب المتقدمين'}</span>
@@ -196,6 +241,8 @@ export function ResearchAcademy() {
                 </div>}
             </div>)}
         </div>
+
+        <CoursesSection />
 
         <div className="azu-rh-twocol">
             <div className="azu-block">
