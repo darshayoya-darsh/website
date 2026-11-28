@@ -4,14 +4,12 @@
    not a guess. Sources are the official home pages. */
 
 export type ResLevel = 'beginner' | 'intermediate' | 'advanced';
-export type ResAccess = 'free' | 'open' | 'subscription' | 'registration';
+export type ResAccess = 'free' | 'subscription';
 export type ResKind = 'database' | 'repository' | 'publisher' | 'data' | 'tool' | 'course' | 'index' | 'opportunity';
 
 export const ACCESS_LABEL: Record<ResAccess, { ar: string; en: string; cls: string }> = {
     free: { ar: 'مجاني', en: 'Free', cls: 'is-free' },
-    open: { ar: 'وصول مفتوح', en: 'Open Access', cls: 'is-open' },
     subscription: { ar: 'اشتراك', en: 'Subscription', cls: 'is-sub' },
-    registration: { ar: 'يتطلب حساب', en: 'Registration', cls: 'is-reg' },
 };
 
 export const LEVEL_LABEL: Record<ResLevel, { ar: string; en: string; cls: string }> = {
@@ -66,7 +64,7 @@ export const RESOURCES: Resource[] = [
     /* ---------- Physics ---------- */
     {
         id: 'arxiv-physics', name: 'arXiv Physics', ar: 'أرشيف الفيزياء', url: 'https://arxiv.org/archive/physics',
-        kind: 'repository', access: 'open', level: 'advanced', disc: ['physics'],
+        kind: 'repository', access: 'free', level: 'advanced', disc: ['physics'],
         about: 'مستودع مفتوح لمسودات الأبحاث (Preprints) في فروع الفيزياء. الأوراق اللي فيه لسه ما خدتش تحكيم علمي كامل، فخدها كمصدر أولي مش كحقيقة نهائية.',
         uses: ['الوصول لأحدث الأبحاث قبل نشرها في الدوريات', 'متابعة التطورات في فروع الفيزياء المختلفة', 'قراءة مسودة بحث ومناقشتها مع المشرف'],
     },
@@ -86,13 +84,13 @@ export const RESOURCES: Resource[] = [
     /* ---------- Mathematics ---------- */
     {
         id: 'zbmath', name: 'zbMATH Open', ar: 'فهرس الرياضيات zbMATH', url: 'https://zbmath.org/',
-        kind: 'database', access: 'open', level: 'advanced', disc: ['math'],
+        kind: 'database', access: 'free', level: 'advanced', disc: ['math'],
         about: 'فهرس رياضي يضم مراجعات وملخصات لأبحاث الرياضيات، مع بحث بالموضوع والمؤلف والتصنيف.',
         uses: ['البحث عن الدراسات السابقة في موضوع رياضي', 'قراءة مراجعات مختصرة قبل قراءة البحث كامل', 'متابعة موضوعات رياضية متخصصة'],
     },
     {
         id: 'arxiv-math', name: 'arXiv Mathematics', ar: 'أرشيف الرياضيات', url: 'https://arxiv.org/archive/math',
-        kind: 'repository', access: 'open', level: 'advanced', disc: ['math'],
+        kind: 'repository', access: 'free', level: 'advanced', disc: ['math'],
         about: 'مسودات أبحاث الرياضيات على arXiv، مفتوحة للقراءة والتحميل.',
         uses: ['متابعة الأبحاث الرياضية الحديثة', 'الوصول لمسودات قبل النشر الرسمي', 'البحث في فروع الرياضيات المختلفة'],
     },
@@ -138,7 +136,7 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'europepmc', name: 'Europe PMC', ar: 'Europe PMC', url: 'https://europepmc.org/',
-        kind: 'database', access: 'open', level: 'intermediate', disc: ['biology'],
+        kind: 'database', access: 'free', level: 'intermediate', disc: ['biology'],
         about: 'فهرس أوروبي للأبحاث الحيوية والطبية، بيدّي نصوص كاملة مفتوحة لملايين المقالات.',
         uses: ['الوصول لنصوص كاملة مفتوحة', 'البحث في الأدبيات الحيوية والطبية', 'الوصول لدراسات سابقة بسرعة'],
     },
@@ -146,19 +144,19 @@ export const RESOURCES: Resource[] = [
     /* ---------- Botany ---------- */
     {
         id: 'powo', name: 'Plants of the World Online', ar: 'نباتات العالم على الإنترنت', url: 'https://powo.science.kew.org/',
-        kind: 'database', access: 'open', level: 'beginner', disc: ['botany'],
+        kind: 'database', access: 'free', level: 'beginner', disc: ['botany'],
         about: 'قاعدة الحدائق النباتية الملكية في كيو (Kew) لأسماء النباتات وتوزيعها وحالتها التصنيفية.',
         uses: ['التعرف على الأنواع النباتية وتصنيفها', 'معرفة الاسم العلمي المقبول للنبات', 'بيانات الانتشار الجغرافي'],
     },
     {
         id: 'gbif', name: 'GBIF', ar: 'شبكة معلومات التنوع الحيوي', url: 'https://www.gbif.org/',
-        kind: 'data', access: 'open', level: 'intermediate', disc: ['botany', 'zoology'],
+        kind: 'data', access: 'free', level: 'intermediate', disc: ['botany', 'zoology'],
         about: 'شبكة عالمية لبيانات التنوع الحيوي: سجلات تواجد الأنواع حول العالم، مفتوحة للبحث والتحميل.',
         uses: ['بيانات انتشار الأنواع جغرافيًا', 'تحليل التنوع الحيوي في منطقة معينة', 'تحميل سجلات تواجد لمشروع بحثي'],
     },
     {
         id: 'ipni', name: 'IPNI', ar: 'الفهرس الدولي لأسماء النباتات', url: 'https://www.ipni.org/',
-        kind: 'database', access: 'open', level: 'advanced', disc: ['botany'],
+        kind: 'database', access: 'free', level: 'advanced', disc: ['botany'],
         about: 'الفهرس الدولي لأسماء النباتات: المرجع لأسماء النباتات المنشورة ومصدر كل اسم.',
         uses: ['التحقق من صحة اسم علمي', 'معرفة مصدر نشر اسم نبات', 'حل الالتباس بين الأسماء المرادفة'],
     },
@@ -174,8 +172,9 @@ export const RESOURCES: Resource[] = [
     /* ---------- Astronomy & Meteorology ---------- */
     {
         id: 'nasa-ads', name: 'NASA ADS', ar: 'نظام بيانات الفيزياء الفلكية', url: 'https://ui.adsabs.harvard.edu/',
-        kind: 'database', access: 'registration', level: 'advanced', disc: ['astro'],
+        kind: 'database', access: 'free', level: 'advanced', disc: ['astro'],
         about: 'نظام بيانات الفيزياء الفلكية من ناسا: أبحاث، اقتباسات، وبيانات فلكية. بيحتاج حساب مجاني.',
+        note: 'مجاني، لكن بيتطلب إنشاء حساب مجاني.',
         uses: ['البحث في الأبحاث الفلكية', 'تتبع الاقتباسات في موضوع فلكي', 'الوصول لبيانات ومصادر فلكية'],
     },
     {
@@ -192,8 +191,9 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'copernicus-cds', name: 'Copernicus Climate Data Store', ar: 'مخزن بيانات المناخ — كوبرنيكوس', url: 'https://cds.climate.copernicus.eu/',
-        kind: 'data', access: 'registration', level: 'advanced', disc: ['astro'],
+        kind: 'data', access: 'free', level: 'advanced', disc: ['astro'],
         about: 'بيانات مناخية عالمية من برنامج كوبرنيكوس الأوروبي، مع أدوات تحليل. بيحتاج حساب مجاني.',
+        note: 'مجاني، لكن بيتطلب إنشاء حساب مجاني.',
         uses: ['بيانات مناخية عالمية موثوقة', 'تحليل متغيرات مناخية على فترات زمنية', 'استخدام أدوات المعالجة والرسم'],
     },
 
@@ -212,7 +212,7 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'dblp', name: 'DBLP', ar: 'فهرس منشورات علوم الحاسب', url: 'https://dblp.org/',
-        kind: 'database', access: 'open', level: 'intermediate', disc: ['cs'],
+        kind: 'database', access: 'free', level: 'intermediate', disc: ['cs'],
         about: 'فهرس مفتوح لمنشورات علوم الحاسب: مؤلفون، مؤتمرات، ودوريات.',
         uses: ['معرفة منشورات باحث معين', 'معرفة أهم مؤتمرات مجال ما', 'تتبع سلسلة أبحاث في موضوع'],
     },
@@ -220,14 +220,15 @@ export const RESOURCES: Resource[] = [
     /* ---------- Artificial Intelligence ---------- */
     {
         id: 'arxiv-ai', name: 'arXiv cs.AI', ar: 'أحدث أبحاث الذكاء الاصطناعي', url: 'https://arxiv.org/list/cs.AI/recent',
-        kind: 'repository', access: 'open', level: 'advanced', disc: ['ai'],
+        kind: 'repository', access: 'free', level: 'advanced', disc: ['ai'],
         about: 'أحدث مسودات أبحاث الذكاء الاصطناعي على arXiv، مرتبة بتاريخ الإضافة.',
         uses: ['متابعة أبحاث الذكاء الاصطناعي اليومية', 'اختيار موضوع بحثي حديث', 'قراءة مسودات قبل النشر'],
     },
     {
         id: 'huggingface', name: 'Hugging Face', ar: 'منصة النماذج المفتوحة', url: 'https://huggingface.co/',
-        kind: 'repository', access: 'registration', level: 'intermediate', disc: ['ai'],
+        kind: 'repository', access: 'free', level: 'intermediate', disc: ['ai'],
         about: 'منصة للنماذج ومجموعات البيانات والأكواد المفتوحة في تعلم الآلة. التصفح متاح، والتحميل والاستخدام بيحتاجوا حساب مجاني.',
+        note: 'مجاني، لكن بيتطلب إنشاء حساب مجاني.',
         uses: ['تنزيل نماذج جاهزة للتجربة', 'الوصول لمجموعات بيانات', 'معرفة الأكواد والتطبيقات البحثية'],
     },
     {
@@ -265,8 +266,9 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'orcid', name: 'ORCID', ar: 'أوركيد — الهوية البحثية', url: 'https://orcid.org/',
-        kind: 'tool', access: 'registration', level: 'intermediate', disc: [],
+        kind: 'tool', access: 'free', level: 'intermediate', disc: [],
         about: 'معرّف رقمي دائم للباحث، بيميزك عن أي باحث تاني بنفس الاسم.',
+        note: 'مجاني، لكن بيتطلب إنشاء حساب مجاني.',
         uses: ['إنشاء هوية بحثية رقمية', 'ربط أبحاثك باسمك الصحيح', 'استخدامه في التقديم للمنح والدوريات'],
     },
     {
@@ -294,6 +296,60 @@ export const RESOURCES: Resource[] = [
         uses: ['معرفة الأوراق المرتبطة بموضوعك', 'تكوين صورة سريعة عن مجال بحث', 'اكتشاف دراسات مشابهة'],
     },
 
+    {
+        id: 'chemrxiv', name: 'ChemRxiv', ar: 'مستودع الكيمياء للنسخ الأولية', url: 'https://chemrxiv.org/',
+        kind: 'repository', access: 'free', level: 'intermediate', disc: ['chemistry'],
+        about: 'مستودع مجاني للنسخ الأولية (preprints) في الكيمياء بكل فروعها، قبل ما تتنشر في الدوريات.',
+        uses: ['قراءة أحدث أبحاث الكيمياء قبل النشر', 'نشر نسختك الأولية', 'تصفح حسب الفرع'],
+    },
+    {
+        id: 'biorxiv', name: 'bioRxiv', ar: 'مستودع الأحياء للنسخ الأولية', url: 'https://www.biorxiv.org/',
+        kind: 'repository', access: 'free', level: 'intermediate', disc: ['biology', 'botany', 'zoology'],
+        about: 'مستودع للنسخ الأولية في علوم الحياة، فيه أقسام للأحياء والنبات وعلم الحيوان. النسخ الأولية لم تراجَع بعد من محكمين.',
+        uses: ['متابعة أحدث أبحاث الأحياء', 'تصفح حسب القسم', 'نشر نسخة أولية'],
+    },
+    {
+        id: 'arxiv-astro', name: 'arXiv Astrophysics', ar: 'أرشيف الفيزياء الفلكية في arXiv', url: 'https://arxiv.org/archive/astro-ph',
+        kind: 'repository', access: 'free', level: 'intermediate', disc: ['astro'],
+        about: 'أرشيف مفتوح لأبحاث الفيزياء الفلكية من 1992، مع قوائم الجديد والشهري.',
+        uses: ['متابعة الأبحاث الجديدة يوميًا', 'تصفح أبحاث شهر معين', 'قراءة النص الكامل مجانًا'],
+    },
+    {
+        id: 'arxiv-cs', name: 'arXiv Computer Science', ar: 'أرشيف علوم الحاسب في arXiv', url: 'https://arxiv.org/archive/cs',
+        kind: 'repository', access: 'free', level: 'intermediate', disc: ['cs'],
+        about: 'أرشيف مفتوح لأبحاث علوم الحاسب من 1993، مع قوائم الجديد والشهري.',
+        uses: ['متابعة الأبحاث الجديدة', 'تصفح أبحاث شهر معين', 'قراءة النص الكامل مجانًا'],
+    },
+    {
+        id: 'lmfdb', name: 'LMFDB', ar: 'قاعدة بيانات الدوال L والصيغ النمطية', url: 'https://www.lmfdb.org/',
+        kind: 'data', access: 'free', level: 'advanced', disc: ['math'],
+        about: 'قاعدة بيانات رياضية مفتوحة فيها المنحنيات الإهليلجية والصيغ النمطية والدوال L وكائنات أخرى في نظرية الأعداد.',
+        uses: ['البحث عن منحنى أو صيغة نمطية', 'جمع بيانات لاختبار فرضية', 'استكشاف أمثلة'],
+    },
+    {
+        id: 'nist-webbook', name: 'NIST Chemistry WebBook', ar: 'كتاب NIST للكيمياء', url: 'https://webbook.nist.gov/chemistry/',
+        kind: 'data', access: 'free', level: 'intermediate', disc: ['chemistry'],
+        about: 'بيانات كيميائية وفيزيائية مرجعية من المعهد الوطني الأمريكي للمعايير (قاعدة SRD 69): ديناميكا حرارية وأطياف وخواص.',
+        uses: ['البحث بالاسم أو الصيغة', 'بيانات الأطياف والديناميكا الحرارية', 'قيم مرجعية موثوقة'],
+    },
+    {
+        id: 'uniprot', name: 'UniProt', ar: 'قاعدة بيانات البروتينات', url: 'https://www.uniprot.org/',
+        kind: 'data', access: 'free', level: 'advanced', disc: ['biology'],
+        about: 'قاعدة بيانات مرجعية لتسلسلات ووظائف البروتينات.',
+        uses: ['البحث عن بروتين وتسلسله ووظيفته', 'تحميل بيانات للتحليل', 'ربط البروتين بالمراجع'],
+    },
+    {
+        id: 'uci-ml', name: 'UCI Machine Learning Repository', ar: 'مستودع جامعة كاليفورنيا لبيانات التعلم الآلي', url: 'https://archive.ics.uci.edu/',
+        kind: 'data', access: 'free', level: 'beginner', disc: ['cs', 'ai'],
+        about: 'مجموعات بيانات جاهزة لتجارب التعلم الآلي، من datasets كلاسيكية صغيرة لأكبر.',
+        uses: ['تجارب تعلم آلي على بيانات جاهزة', 'تعلم التصنيف والانحدار', 'مقارنة نتائجك بمراجع'],
+    },
+    {
+        id: 'plos-one', name: 'PLOS ONE', ar: 'دورية PLOS ONE مفتوحة الوصول', url: 'https://journals.plos.org/plosone/',
+        kind: 'publisher', access: 'free', level: 'intermediate', disc: [],
+        about: 'دورية محكّمة مفتوحة الوصول (Gold OA) في كل التخصصات العلمية. القراءة مجانية، لكن النشر فيها بيتطلب رسوم معالجة على الباحث.',
+        uses: ['قراءة مقالات كاملة بدون اشتراك', 'أمثلة لشكل الورقة العلمية', 'نشر بحثك (برسوم)'],
+    },
     /* ---------- Learning paths ---------- */
     {
         id: 'inasp', name: 'INASP Learn', ar: 'منصة INASP للبحث العلمي', url: 'https://learn.inasp.info/',
@@ -303,7 +359,7 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'coursera', name: 'Coursera', ar: 'كورسيرا', url: 'https://www.coursera.org/',
-        kind: 'course', access: 'registration', level: 'beginner', disc: [],
+        kind: 'course', access: 'subscription', level: 'beginner', disc: [],
         about: 'دورات جامعية في مناهج البحث والتحليل. بعض الدورات مجانية للاستماع، والشهادة أو المحتوى الكامل غالبًا مدفوع.',
         uses: ['دورات في مناهج البحث', 'دورات في تحليل البيانات', 'متابعة مسار كامل بترتيب'],
     },
@@ -315,7 +371,7 @@ export const RESOURCES: Resource[] = [
     },
     {
         id: 'rwaq', name: 'Rwaq', ar: 'رواق', url: 'https://www.rwaq.org/',
-        kind: 'course', access: 'registration', level: 'beginner', disc: [],
+        kind: 'course', access: 'subscription', level: 'beginner', disc: [],
         about: 'منصة عربية للمقررات المفتوحة، فيها مقررات في مناهج البحث والكتابة الأكاديمية.',
         note: 'بعض المقررات مدفوعة (مقرر المهارات الأكاديمية مثلًا بسعر 34.5 ريال سعودي)، فاتأكد من صفحة المقرر قبل التسجيل.',
         uses: ['مقررات عربية في مناهج البحث', 'تدريب على الكتابة الأكاديمية', 'مقدمة في الإحصاء والتحليل'],
@@ -356,7 +412,7 @@ export const RESOURCES: Resource[] = [
     /* ---------- Journal guidance and indexes ---------- */
     {
         id: 'doaj', name: 'DOAJ', ar: 'دليل الدوريات مفتوحة الوصول', url: 'https://doaj.org/',
-        kind: 'index', access: 'open', level: 'beginner', disc: [],
+        kind: 'index', access: 'free', level: 'beginner', disc: [],
         about: 'دليل الدوريات مفتوحة الوصول: تعرف منه المجلات المحكمة اللي بتتيح محتواها مجانًا.',
         uses: ['معرفة مجلة محكمة مفتوحة الوصول', 'النشر من غير رسوم', 'التحقق من سياسة الوصول المفتوح'],
     },
@@ -483,7 +539,7 @@ export const COURSES: Course[] = [
     },
     {
         id: 'c-ocw-1805', title: 'Introduction to Probability and Statistics (18.05)', provider: 'MIT OpenCourseWare', providerAr: 'إم آي تي',
-        url: 'https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/', lang: 'en', level: 'intermediate', access: 'open', topic: 'stats',
+        url: 'https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/', lang: 'en', level: 'intermediate', access: 'free', topic: 'stats',
         about: 'مقرر جامعي كامل في الاحتمالات والإحصاء: محاضرات وواجبات ومذكرات مفتوحة.',
         note: 'مواد مفتوحة بدون تسجيل، من غير شهادة.',
     },
@@ -495,13 +551,13 @@ export const COURSES: Course[] = [
     },
     {
         id: 'c-delft-rm', title: 'Multidisciplinary Research Methods for Engineers', provider: 'DelftX on edX', providerAr: 'جامعة دلفت عبر edX',
-        url: 'https://www.edx.org/learn/engineering/delft-university-of-technology-multidisciplinary-research-methods-for-engineers', lang: 'en', level: 'intermediate', access: 'registration', topic: 'basics',
+        url: 'https://www.edx.org/learn/engineering/delft-university-of-technology-multidisciplinary-research-methods-for-engineers', lang: 'en', level: 'intermediate', access: 'free', topic: 'basics',
         about: 'مناهج البحث متعددة التخصصات: تصميم الدراسة وجمع البيانات.',
         note: 'مسار الاستماع المجاني (Audit) متاح لمدة محدودة، والشهادة والتقييمات مدفوعة، حسب سياسة edX.',
     },
     {
         id: 'c-carpentries', title: 'The Carpentries lessons (Data Carpentry and Software Carpentry)', provider: 'The Carpentries', providerAr: 'ذا كاربنتريز',
-        url: 'https://carpentries.org/lessons/', lang: 'en', level: 'intermediate', access: 'open', topic: 'data',
+        url: 'https://carpentries.org/lessons/', lang: 'en', level: 'intermediate', access: 'free', topic: 'data',
         about: 'دروس عملية في Python وR وSQL والـ shell لتنظيف وتحليل بيانات البحث.',
         note: 'الدروس مرخصة بترخيص Creative Commons وتتاح للجميع.',
     },

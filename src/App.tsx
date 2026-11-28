@@ -12,12 +12,12 @@ import type { BylawTrack } from './bylaw';
 import { AgentChat, AGENT_OPEN_EVENT } from './AgentChat';
 import { AuthPage } from './AuthPage';
 import { AdminPage } from './AdminPage';
-import { Icon } from './Icon';
+import { Icon, BrandIcon } from './Icon';
 import { MobileNav, SearchOverlay, TopNavLinks, SignInLink } from './nav';
 import { clearJustConfirmed, useAuth, getAuth, SUPA_URL, SUPA_KEY } from './auth';
 import { Reveal, Crumb, onVp, inView, vp } from './ui';
 import { ResearchHub, ResearchAcademy, ResearchLibrary, ResearchTools, ResearchJournals, ResearchDiscipline } from './Research';
-import { RESEARCH_DISCIPLINES } from './research';
+import { RESEARCH_DISCIPLINES, RESOURCES } from './research';
 import { fileUrl, FILE_KINDS, fmtSize, COURSE_BUTTONS, courseLabel } from './admin';
 import type { FileRow } from './admin';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software, Faculty } from './data';
@@ -71,17 +71,13 @@ function LiveFiles({ faculty, track, ar }: { faculty: string; track: string; ar:
 }
 const deptsFor = (facultyId: string) => DEPARTMENTS.filter(d => !d.onlyFaculties || d.onlyFaculties.includes(facultyId));
 
-const NEWS = [
-    { chip: 'News', date: 'Sep 5, 2026', title: 'Start of the New Academic Year', text: 'Important information for all students regarding registration and schedules.' },
-    { chip: 'Opportunity', date: 'Aug 28, 2026', title: 'NASA Space Apps Challenge', text: "Join the world's largest hackathon and be part of global innovation." },
-    { chip: 'Event', date: 'Aug 20, 2026', title: 'Scientific Research Workshop', text: 'A workshop on how to start your research journey.' },
-];
+const NEWS: { chip: string; date: string; title: string; text: string }[] = [];
 
 const STATS = [
-    { icon: 'users', value: '5,000+', label: 'Students' },
-    { icon: 'user', value: '150+', label: 'Academic Staff' },
-    { icon: 'flask', value: '20+', label: 'Research Projects' },
-    { icon: 'landmark', value: '10+', label: 'Departments' },
+    { icon: 'books', value: String(RESOURCES.length), label: 'Research Sources' },
+    { icon: 'flask', value: String(RESEARCH_DISCIPLINES.length), label: 'Research Disciplines' },
+    { icon: 'code', value: String(SOFTWARE.length), label: 'Scientific Software' },
+    { icon: 'landmark', value: String(DEPARTMENTS.length), label: 'Departments' },
 ];
 
 /* ---------- Count-up stat ---------- */
@@ -187,7 +183,11 @@ function Footer() {
             </div>
             <div className="azu-footer-col">
                 <div className="azu-footer-head">Follow Us</div>
-                <span className="azu-footer-note">Social Links — قريبًا</span>
+                <div className="azu-social">
+                    <a className="azu-social-link" href="https://www.facebook.com/share/1Fz3pSC22J/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><BrandIcon name="facebook" size={20} /></a>
+                    <span className="azu-social-soon"><span className="azu-social-link is-off" aria-label="Instagram"><BrandIcon name="instagram" size={20} /></span><em>قريبًا</em></span>
+                    <span className="azu-social-soon"><span className="azu-social-link is-off" aria-label="LinkedIn"><BrandIcon name="linkedin" size={20} /></span><em>قريبًا</em></span>
+                </div>
                 <span className="azu-footer-line">Together for a brighter scientific future.</span>
             </div>
         </div>
@@ -288,6 +288,7 @@ function Home() {
                 </div>
                 <Link to="/news" className="azu-btn azu-btn-outline">View All News <Icon name="arrow" size={15} /></Link>
             </div>
+            {NEWS.length === 0 && <div className="azu-empty"><Icon name="spark" size={26} /><p dir="rtl">مفيش أخبار منشورة لسه. الإعلانات الرسمية للمنصة هتظهر هنا أول ما تتنشر.</p></div>}
             <Reveal stagger className="azu-news-grid">
                 {NEWS.map(n => <article key={n.title} className="azu-news-card">
                     <PhotoSlot label="صورة الخبر — قريبًا" ratio="16 / 9" />
@@ -997,7 +998,7 @@ function MessagePage({ kind }: { kind: 'contact' | 'report' }) {
         {ready && <div className="azu-contact-lines" dir="rtl">
             <p className="azu-contact-line"><Icon name="mail" size={16} /> <span>البريد الإلكتروني:</span> <a href={`mailto:${CONTACT_EMAIL}`} dir="ltr">{CONTACT_EMAIL}</a></p>
             <p className="azu-contact-line"><Icon name="whatsapp" size={16} /> <span>واتساب:</span> <a href="https://wa.me/201225728551" target="_blank" rel="noreferrer" dir="ltr">+20 122 572 8551</a></p>
-            <p className="azu-contact-line"><Icon name="facebook" size={16} /> <span>فيسبوك:</span> <a href="https://www.facebook.com/share/19qWhxdbVs/" target="_blank" rel="noreferrer" dir="ltr">facebook.com/share/19qWhxdbVs</a></p>
+            <p className="azu-contact-line"><BrandIcon name="facebook" size={16} /> <span>فيسبوك:</span> <a href="https://www.facebook.com/share/1Fz3pSC22J/" target="_blank" rel="noopener noreferrer" dir="ltr">facebook.com/share/1Fz3pSC22J</a></p>
         </div>}
         <div className="azu-form" dir="rtl">
             <label className="azu-field">الاسم
@@ -1087,6 +1088,7 @@ export function App() {
                     <Crumb items={[{ label: 'Home', to: '/' }, { label: 'News' }]} />
                     <div className="azu-kicker">LATEST UPDATES</div>
                     <h2 className="azu-title">News &amp; Announcements</h2>
+                    {NEWS.length === 0 && <div className="azu-empty"><Icon name="spark" size={26} /><p dir="rtl">مفيش أخبار منشورة لسه. الإعلانات الرسمية للمنصة هتظهر هنا أول ما تتنشر.</p></div>}
                     <Reveal stagger className="azu-news-grid">
                         {NEWS.map(n => <article key={n.title} className="azu-news-card">
                             <PhotoSlot label="صورة الخبر — قريبًا" ratio="16 / 9" />
@@ -1097,7 +1099,7 @@ export function App() {
                             </div>
                         </article>)}
                     </Reveal>
-                    <p className="azu-note">تابع آخر الأخبار والإعلانات.</p>
+                    
                 </section>} />
                 <Route path="/community" element={<SimplePage kicker="COMMUNITY" title="Community" icon="users"><p>قريبًا.</p></SimplePage>} />
                 <Route path="/about" element={<section className="azu-section azu-flow">

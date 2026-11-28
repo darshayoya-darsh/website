@@ -127,7 +127,7 @@ export function ResearchHub() {
                 <span className="azu-rh-disc-ar" dir="rtl">{d.ar}</span>
                 <span className="azu-rh-disc-en">{d.en}</span>
                 <span className="azu-rh-disc-text" dir="rtl">{d.blurb}</span>
-                <span className="azu-rh-disc-count">{RESOURCES.filter(r => r.disc.includes(d.id)).length} مصادر</span>
+                <span className="azu-rh-disc-count">{RESOURCES.filter(r => inDisc(r, d.id)).length} مصادر</span>
             </Link>)}
         </Reveal>
 
@@ -264,7 +264,8 @@ export function ResearchAcademy() {
 /* ---------- 3. Library ---------- */
 
 const KINDS: ResKind[] = ['database', 'repository', 'data', 'publisher', 'tool', 'index', 'course', 'opportunity'];
-const ACCESSES: ResAccess[] = ['free', 'open', 'subscription', 'registration'];
+const ACCESSES: ResAccess[] = ['free', 'subscription'];
+const inDisc = (r: Resource, d: string) => d === 'all' || r.disc.length === 0 || r.disc.includes(d);
 
 export function ResearchLibrary() {
     const [disc, setDisc] = React.useState('all');
@@ -273,7 +274,7 @@ export function ResearchLibrary() {
     const [q, setQ] = React.useState('');
 
     const list = RESOURCES.filter(r =>
-        (disc === 'all' || r.disc.includes(disc)) &&
+        inDisc(r, disc) &&
         (kind === 'all' || r.kind === kind) &&
         (access === 'all' || r.access === access) &&
         (q.trim() === '' || `${r.name} ${r.ar} ${r.about} ${r.disc.map(discAr).join(' ')}`.toLowerCase().includes(q.trim().toLowerCase()))
