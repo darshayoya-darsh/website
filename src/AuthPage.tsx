@@ -108,7 +108,7 @@ export function AuthPage() {
             if (code.replace(/\D/g, '').length < 6) { setErr('اكتب الكود المكوّن من الأرقام المرسل إلى بريدك.'); return; }
             setBusy(true);
             try { await verifyCode(email.trim(), code); }
-            catch (ex) { setErr(ex instanceof Error ? ex.message : 'حدث خطأ غير متوقع. أعد المحاولة.'); }
+            catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر إتمام العملية. أعد المحاولة، وإن تكرر ذلك تواصل معنا من صفحة اتصل بنا.'); }
             finally { setBusy(false); }
         };
         const doResend = async () => {
@@ -141,6 +141,8 @@ export function AuthPage() {
        is handled via onKeyDown — never rely on <form> submission. */
     const submit = async () => {
         setErr('');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) { setErr('اكتب بريدًا إلكترونيًا صحيحًا، مثل name@gmail.com.'); return; }
+        if (!pw) { setErr('اكتب كلمة المرور.'); return; }
         if (mode === 'up') {
             if (name.trim().length < 3) { setErr('اكتب اسمك الكامل.'); return; }
             if (pw.length < 6) { setErr('كلمة المرور ٦ أحرف على الأقل.'); return; }
@@ -155,7 +157,7 @@ export function AuthPage() {
             }
         } catch (ex) {
             const e = ex as Error & { code?: string };
-            setErr(e instanceof Error ? e.message : 'حدث خطأ غير متوقع. أعد المحاولة.');
+            setErr(e instanceof Error ? e.message : 'تعذر إتمام العملية. أعد المحاولة، وإن تكرر ذلك تواصل معنا من صفحة اتصل بنا.');
             setUnconfirmed((e.code || '').includes('email_not_confirmed'));
             setResent(false);
         } finally { setBusy(false); }

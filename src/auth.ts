@@ -94,35 +94,53 @@ export function useAuth(): AuthSession | null {
 export function getAuth(): AuthSession | null { return session; }
 
 async function api(path: string, body?: Record<string, unknown>, token?: string) {
-    const r = await fetch(`${SUPA_URL}${path}`, {
-        method: body ? 'POST' : 'GET',
-        headers: {
-            apikey: SUPA_KEY,
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-    });
+    let r: Response;
+    try {
+        r = await fetch(`${SUPA_URL}${path}`, {
+            method: body ? 'POST' : 'GET',
+            headers: {
+                apikey: SUPA_KEY,
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: body ? JSON.stringify(body) : undefined,
+        });
+    } catch {
+        throw new Error('تعذر الاتصال بالخادم. تأكد من اتصالك بالإنترنت ثم أعد المحاولة.');
+    }
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
         const code = (data.error_code || data.error || '') as string;
         const msg = (data.error_description || data.msg || data.message || '') as string;
-        const err = new Error(arError(code, msg)) as Error & { code?: string };
+        const err = new Error(arError(code, msg, r.status)) as Error & { code?: string };
         err.code = code || msg;
         throw err;
     }
     return data;
 }
 
-function arError(code: string, msg: string): string {
+/* Every failure gets a specific, polite Arabic message. The site never shows
+   a raw server message, and "unexpected error" is the last resort only. */
+function arError(code: string, msg: string, status = 0): string {
     const m = `${code} ${msg}`.toLowerCase();
-    if (m.includes('invalid login') || m.includes('invalid_credentials')) return 'البريد أو كلمة المرور غير صحيحة.';
-    if (m.includes('user_already') || m.includes('already registered') || m.includes('already been registered')) return 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.';
-    if (m.includes('weak_password') || m.includes('at least 6')) return 'كلمة المرور ضعيفة؛ ٦ أحرف على الأقل.';
-    if (m.includes('email_not_confirmed')) return 'الحساب غير مؤكد بعد؛ راجع بريدك الإلكتروني.';
-    if (m.includes('otp_expired') || m.includes('expired') || m.includes('invalid')) return 'الكود غير صحيح أو انتهت صلاحيته. اطلب كودًا جديدًا.';
-    if (m.includes('rate_limit') || m.includes('over_rate')) return 'محاولات كثيرة؛ انتظر قليلًا ثم أعد المحاولة.';
-    return 'حدث خطأ غير متوقع. أعد المحاولة.';
+    const has = (...k: string[]) => k.some((x) => m.includes(x));
+    if (has('invalid login', 'invalid_credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة. تأكد منهما وحاول مرة أخرى.';
+    if (has('user_already', 'already registered', 'already been registered', 'email_exists')) return 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول، أو استخدم بريدًا آخر.';
+    if (has('email_address_invalid', 'invalid email', 'unable to validate email', 'validate email')) return 'البريد الإلكتروني غير صالح. تأكد من كتابته بشكل صحيح.';
+    if (has('weak_password', 'at least 6', 'password should', 'password is too')) return 'كلمة المرور ضعيفة. استخدم ٦ أحرف على الأقل.';
+    if (has('same_password')) return 'كلمة المرور الجديدة لازم تكون مختلفة عن القديمة.';
+    if (has('email_not_confirmed', 'not confirmed')) return 'حسابك لم يُؤكَّد بعد. اكتب كود التأكيد المرسل إلى بريدك.';
+    if (has('otp_expired', 'token has expired', 'expired')) return 'انتهت صلاحية الكود. اطلب كودًا جديدًا وأدخله بسرعة.';
+    if (has('otp', 'token', 'verification') && has('invalid', 'not found')) return 'الكود غير صحيح. راجع الأرقام وحاول مرة أخرى.';
+    if (has('over_email_send_rate_limit', 'email rate limit', 'rate_limit', 'over_request_rate', 'too many', 'for security purposes')) return 'محاولات كثيرة في وقت قصير. انتظر دقيقة ثم أعد المحاولة.';
+    if (has('signup_disabled', 'signups not allowed')) return 'التسجيل مغلق مؤقتًا. حاول لاحقًا.';
+    if (has('user_banned', 'banned')) return 'هذا الحساب موقوف. تواصل مع إدارة المنصة.';
+    if (has('user_not_found', 'user not found')) return 'لا يوجد حساب بهذا البريد. تأكد منه أو أنشئ حسابًا جديدًا.';
+    if (has('sending confirmation', 'sending email', 'smtp', 'error sending')) return 'تعذر إرسال رسالة التأكيد إلى بريدك الآن. حاول بعد قليل، أو تواصل معنا من صفحة اتصل بنا.';
+    if (status === 429) return 'محاولات كثيرة في وقت قصير. انتظر دقيقة ثم أعد المحاولة.';
+    if (status >= 500) return 'الخدمة مشغولة لحظيًا. أعد المحاولة بعد قليل، ولن تفقد بياناتك.';
+    if (status === 401 || status === 403) return 'انتهت جلستك. سجّل دخولك من جديد.';
+    return 'تعذر إتمام العملية. راجع البيانات وأعد المحاولة، وإن تكرر ذلك تواصل معنا من صفحة اتصل بنا.';
 }
 
 async function loadProfile(access_token: string, user: { id: string; email?: string; user_metadata?: { full_name?: string } }): Promise<AuthUser> {
