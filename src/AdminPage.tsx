@@ -406,6 +406,101 @@ function FacultyAdminsPanel({ grants, facultyIds, requests, reloadAll, dept }: {
     </div>;
 }
 
+
+type Tier = 'super' | 'faculty' | 'dept' | 'cohort';
+const TIER_AR: Record<Tier, string> = { super: 'السوبر أدمن', faculty: 'مشرفو الكليات', dept: 'مشرفو الأقسام', cohort: 'مشرفو الدفعات' };
+const TIER_SCOPE: Record<Exclude<Tier, 'super'>, Scope> = { faculty: 'faculty', dept: 'track', cohort: 'cohort' };
+
+/* One list per tier. Super admin acts directly; faculty and department admins
+   send requests that the super admin approves. The database enforces the rules. */
+function TierList({ tier, grants, requests, isSuper, isFacultyAdmin, reloadAll }: {
+    tier: Tier; grants: Grant[]; requests: AdminRequest[]; isSuper: boolean; isFacultyAdmin: boolean; reloadAll: () => Promise<void>;
+}) {
+    const me = useAuth()?.user.email;
+    const [accounts, setAccounts] = React.useState<AccountRow[] | null>(null);
+    const [root, setRoot] = React.useState(false);
+    const [ask, setAsk] = React.useState<{ kind: 'remove' | 'promote'; g?: Grant; email?: string } | null>(null);
+    const [busy, setBusy] = React.useState(false);
+    const [err, setErr] = React.useState('');
+    const [ok, setOk] = React.useState('');
+
+    React.useEffect(() => {
+        if (tier !== 'super') return;
+        listAccounts().then(setAccounts).catch(() => setAccounts([]));
+        isRoot().then(setRoot);
+    }, [tier]);
+
+    const direct = isSuper;
+    const rows = tier === 'super' ? [] : grants.filter((g) => g.scope === TIER_SCOPE[tier]);
+    const supers = (accounts || []).filter((a) => a.role === 'admin');
+    const pending = new Set(requests.filter((r) => r.status === 'pending' && r.action === 'remove').map((r) => r.target_email + r.scope + r.track + r.year));
+    /* Who may act on a row of this tier. */
+    const canAct = tier === 'super' ? root : direct || (tier === 'dept' && isFacultyAdmin) || (tier === 'cohort');
+    const nextTier = tier === 'cohort' ? 'dept' : tier === 'dept' ? 'faculty' : 'super';
+    const canPromote = tier === 'super' ? false
+        : tier === 'faculty' ? root
+        : tier === 'dept' ? direct
+        : (direct || isFacultyAdmin);
+
+    const run = async () => {
+        if (!ask) return;
+        setBusy(true); setErr(''); setOk('');
+        try {
+            const g = ask.g;
+            if (ask.kind === 'remove') {
+                if (tier === 'super') { await setSuper(ask.email || '', false); setAccounts(await listAccounts()); setOk('أُزيلت صلاحية السوبر أدمن.'); }
+                else if (g && direct) { await removeGrant(g.id); setOk('أُزيل المشرف.'); }
+                else if (g) { await requestRemove(g.id); setOk('أُرسل طلب الإزالة للسوبر أدمن، ولا يُنفَّذ إلا بموافقته.'); }
+            } else if (g) {
+                if (tier === 'faculty') { await setSuper(g.email, true); setOk('تمت الترقية إلى سوبر أدمن.'); }
+                else {
+                    const up = { email: g.email, scope: (tier === 'cohort' ? 'track' : 'faculty') as Scope, faculty: g.faculty, category: g.category, track: tier === 'cohort' ? g.track : null, year: null, perms: 'full' as const };
+                    if (direct) { await addGrant(up); await removeGrant(g.id); setOk('تمت الترقية.'); }
+                    else { await requestAdd(up); await requestRemove(g.id); setOk('أُرسل طلبان للسوبر أدمن: إضافة المستوى الأعلى وإزالة القديم. يُنفَّذان بعد موافقته.'); }
+                }
+            }
+            await reloadAll();
+        } catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر التنفيذ.'); }
+        finally { setBusy(false); setAsk(null); }
+    };
+
+    return <div className="azu-admin-card" dir="rtl">
+        <h3 className="azu-admin-h">{TIER_AR[tier]}{tier === 'super' ? (accounts ? ` (${supers.length})` : '') : ` (${rows.length})`}</h3>
+        {tier !== 'super' && !direct && <p className="azu-admin-note">أي إزالة أو ترقية تُرسل للسوبر أدمن وتُطبَّق بعد موافقته.</p>}
+        {err && <p className="azu-admin-err" role="alert">{err}</p>}
+        {ok && <p className="azu-admin-ok" role="status">{ok}</p>}
+        <div className="azu-admin-grants">
+            {tier === 'super' && supers.map((a) => <div key={a.id} className="azu-admin-row">
+                <div className="azu-admin-row-main">
+                    <span className="azu-admin-row-title">{a.full_name || 'بدون اسم'}</span>
+                    <span className="azu-admin-row-meta" dir="ltr">{a.email}</span>
+                </div>
+                {root && a.email !== me && <div className="azu-admin-row-actions">
+                    <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setAsk({ kind: 'remove', email: a.email })}>إزالة</button>
+                </div>}
+            </div>)}
+            {tier === 'super' && accounts && supers.length === 0 && <p className="azu-admin-note">لا يوجد.</p>}
+            {rows.map((g) => <div key={g.id} className="azu-admin-row">
+                <div className="azu-admin-row-main">
+                    <span className="azu-admin-row-title" dir="ltr">{g.email}</span>
+                    <span className="azu-admin-row-meta">{scopeLabel(g)} · {permLabel(g.perms)}</span>
+                </div>
+                <div className="azu-admin-row-actions">
+                    {pending.has(g.email + g.scope + g.track + g.year) ? <span className="azu-tag">بانتظار الموافقة</span> : canAct && <>
+                        {canPromote && <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setAsk({ kind: 'promote', g })}>ترقية إلى {nextTier === 'super' ? 'سوبر أدمن' : nextTier === 'faculty' ? 'مشرف كلية' : 'مشرف قسم'}</button>}
+                        <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setAsk({ kind: 'remove', g })}>{direct ? 'إزالة' : 'طلب إزالة'}</button>
+                    </>}
+                </div>
+            </div>)}
+            {tier !== 'super' && rows.length === 0 && <p className="azu-admin-note">لا يوجد مشرفون في هذه القائمة.</p>}
+        </div>
+        {ask && <ConfirmDialog busy={busy}
+            title={ask.kind === 'remove' ? 'إزالة مشرف' : 'ترقية مشرف'}
+            text={`${ask.kind === 'remove' ? 'إزالة' : 'ترقية'} ${ask.g?.email || ask.email || ''}${tier !== 'super' && !direct ? '. سيُرسل الطلب للسوبر أدمن ولا يُنفَّذ إلا بموافقته.' : '؟'}`}
+            confirmLabel="تأكيد" onConfirm={run} onCancel={() => setAsk(null)} />}
+    </div>;
+}
+
 const reqText = (r: AdminRequest) => `${r.action === 'add' ? 'إضافة' : 'إزالة'} ${r.target_email} — ${scopeLabel({ id: 0, email: r.target_email, scope: r.scope || 'cohort', faculty: r.faculty, category: r.category, track: r.track, year: r.year, perms: r.perms })} · ${permLabel(r.perms)}`;
 const STATUS_AR = { pending: 'بانتظار الموافقة', approved: 'تمت الموافقة', rejected: 'مرفوض' };
 
@@ -516,7 +611,7 @@ function AccountsSection({ grants }: { grants: Grant[] }) {
     </div>;
 }
 
-type Tab = 'overview' | 'upload' | 'files' | 'admins' | 'approvals' | 'accounts';
+type Tab = 'overview' | 'upload' | 'files' | 'admins' | 'l-super' | 'l-faculty' | 'l-dept' | 'l-cohort' | 'approvals' | 'accounts';
 
 export function AdminPage() {
     const session = useAuth();
@@ -572,6 +667,9 @@ export function AdminPage() {
         { id: 'upload', ar: 'رفع ملف', icon: 'upload' },
         { id: 'files', ar: 'الملفات', icon: 'books' },
         ...(isSuper || isFacultyAdmin || isDeptAdmin ? [{ id: 'admins' as Tab, ar: 'المشرفون', icon: 'user' }] : []),
+        ...(isSuper ? [{ id: 'l-super' as Tab, ar: 'السوبر أدمن', icon: 'shield' }, { id: 'l-faculty' as Tab, ar: 'مشرفو الكليات', icon: 'user' }] : []),
+        ...(isSuper || isFacultyAdmin ? [{ id: 'l-dept' as Tab, ar: 'مشرفو الأقسام', icon: 'user' }] : []),
+        ...(isSuper || isFacultyAdmin || isDeptAdmin ? [{ id: 'l-cohort' as Tab, ar: 'مشرفو الدفعات', icon: 'user' }] : []),
         ...(isSuper || isFacultyAdmin || isDeptAdmin ? [{ id: 'approvals' as Tab, ar: isSuper ? 'الموافقات' : 'طلباتي', icon: 'shield', badge: isSuper ? pending : 0 }] : []),
         ...(isSuper ? [{ id: 'accounts' as Tab, ar: 'الحسابات', icon: 'users' }] : []),
     ];
@@ -603,6 +701,7 @@ export function AdminPage() {
                 {tab === 'admins' && isSuper && <GrantsManager grants={g} reload={reload} />}
                 {tab === 'admins' && isDeptAdmin && <FacultyAdminsPanel dept={deptGrant} grants={g} facultyIds={[deptGrant!.faculty]} requests={requests} reloadAll={reload} />}
                 {tab === 'admins' && isFacultyAdmin && <FacultyAdminsPanel grants={g} facultyIds={facultyIds} requests={requests} reloadAll={reload} />}
+                {tab.startsWith('l-') && <TierList tier={tab.slice(2) as Tier} grants={g} requests={requests} isSuper={!!isSuper} isFacultyAdmin={isFacultyAdmin} reloadAll={reload} />}
                 {tab === 'approvals' && (isSuper || isFacultyAdmin || isDeptAdmin) && <RequestsPanel requests={requests} isSuper={!!isSuper} reloadAll={reload} />}
                 {tab === 'accounts' && isSuper && <AccountsSection grants={g} />}
             </div>
