@@ -34,7 +34,7 @@ function ReplyText({ text }: { text: string }) {
     const blocks: React.ReactNode[] = [];
     let items: string[] = [];
     const flush = () => { if (items.length) { const k = blocks.length; const it = items; blocks.push(<ul key={k} className="azu-agent-list">{it.map((x, j) => <li key={j}><Inline text={x} /></li>)}</ul>); items = []; } };
-    text.replace(/\r/g, '').split('\n').forEach((raw, n) => {
+    text.replace(/\r/g, '').replace(/\*\*/g, '').replace(/^#+\s*/gm, '').split('\n').forEach((raw, n) => {
         const line = raw.trim();
         const m = /^(?:[-•*]|\d+[.)])\s+(.*)$/.exec(line);
         if (m) { items.push(m[1]); return; }
