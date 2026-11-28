@@ -14,7 +14,7 @@ const REDIRECT_Q = `?redirect_to=${encodeURIComponent(SITE_URL)}`;
 const LS_KEY = 'azu_auth_v1';
 const HAS_ACCOUNT_KEY = 'azu_has_account';
 
-export interface AuthUser { id: string; email: string; fullName: string; role: string; avatarPath?: string | null; }
+export interface AuthUser { id: string; email: string; fullName: string; role: string; avatarPath?: string | null; faculty?: string | null; department?: string | null; year?: number | null; }
 export interface AuthSession { access_token: string; refresh_token: string; user: AuthUser; justConfirmed?: boolean; }
 
 let session: AuthSession | null = null;
@@ -147,15 +147,17 @@ async function loadProfile(access_token: string, user: { id: string; email?: str
     let role = 'student';
     let fullName = user?.user_metadata?.full_name || '';
     let avatarPath: string | null = null;
+    let faculty: string | null = null, department: string | null = null, year: number | null = null;
     try {
-        const rows = await api(`/rest/v1/profiles?id=eq.${user.id}&select=full_name,role,avatar_path`, undefined, access_token);
+        const rows = await api(`/rest/v1/profiles?id=eq.${user.id}&select=full_name,role,avatar_path,faculty,department,year`, undefined, access_token);
         if (Array.isArray(rows) && rows[0]) {
             role = rows[0].role || 'student';
             fullName = rows[0].full_name || fullName;
             avatarPath = rows[0].avatar_path || null;
+            faculty = rows[0].faculty || null; department = rows[0].department || null; year = rows[0].year || null;
         }
     } catch { /* profile row may lag the signup trigger by a beat */ }
-    return { id: user.id, email: user.email || '', fullName, role, avatarPath };
+    return { id: user.id, email: user.email || '', fullName, role, avatarPath, faculty, department, year };
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -297,4 +299,47 @@ export async function verifyCode(email: string, code: string): Promise<AuthUser>
     const u = await loadProfile(data.access_token, data.user);
     setSession({ access_token: data.access_token, refresh_token: data.refresh_token, user: u, justConfirmed: true });
     return u;
+}
+
+/* Account page: save name and academic data on the student's own profile row. */
+export async function updateProfile(fields: { fullName?: string; faculty?: string | null; department?: string | null; year?: number | null }): Promise<void> {
+    if (!session) throw new Error('سجّل دخولك أولًا.');
+    const patch: Record<string, unknown> = {};
+    if (fields.fullName !== undefined) patch.full_name = fields.fullName;
+    if (fields.faculty !== undefined) patch.faculty = fields.faculty;
+    if (fields.department !== undefined) patch.department = fields.department;
+    if (fields.year !== undefined) patch.year = fields.year;
+    const at = await ensureFreshToken();
+    let r: Response;
+    try {
+        r = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${session.user.id}`, {
+            method: 'PATCH',
+            headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify(patch),
+        });
+    } catch { throw new Error('تعذر الاتصال بالخادم. تأكد من اتصالك بالإنترنت ثم أعد المحاولة.'); }
+    if (!r.ok) throw new Error('تعذر حفظ البيانات. أعد المحاولة.');
+    const u = { ...session.user };
+    if (fields.fullName !== undefined) u.fullName = fields.fullName;
+    if (fields.faculty !== undefined) u.faculty = fields.faculty;
+    if (fields.department !== undefined) u.department = fields.department;
+    if (fields.year !== undefined) u.year = fields.year;
+    setSession({ ...session, user: u });
+}
+
+export async function changePassword(newPassword: string): Promise<void> {
+    if (!session) throw new Error('سجّل دخولك أولًا.');
+    const at = await ensureFreshToken();
+    let r: Response;
+    try {
+        r = await fetch(`${SUPA_URL}/auth/v1/user`, {
+            method: 'PUT',
+            headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: newPassword }),
+        });
+    } catch { throw new Error('تعذر الاتصال بالخادم. تأكد من اتصالك بالإنترنت ثم أعد المحاولة.'); }
+    if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(arError(d.error_code || '', d.msg || d.message || '', r.status));
+    }
 }

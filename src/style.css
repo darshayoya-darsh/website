@@ -1338,3 +1338,7 @@ a.azu-social-link:hover { background: #e6efe9; transform: translateY(-2px); }
   .azu-admin-nav { flex-direction: row; overflow-x: auto; position: static; padding-bottom: 6px; }
   .azu-admin-tab { white-space: nowrap; }
 }
+
+.azu-account-block { display: flex; flex-direction: column; gap: 12px; padding: 18px 0; border-top: 1px solid #e6ddc9; }
+.azu-account-h { margin: 0; font-size: 16px; font-weight: 800; color: #0c3a34; }
+.azu-account-actions { display: flex; gap: 10px; flex-wrap: wrap; }
