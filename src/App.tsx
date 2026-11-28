@@ -15,7 +15,10 @@ import { AdminPage } from './AdminPage';
 import { Icon } from './Icon';
 import { MobileNav, SearchOverlay, TopNavLinks, SignInLink } from './nav';
 import { clearJustConfirmed, useAuth, getAuth, SUPA_URL, SUPA_KEY } from './auth';
-import { fileUrl, FILE_KINDS, fmtSize } from './admin';
+import { Reveal, Crumb, onVp, inView, vp } from './ui';
+import { ResearchHub, ResearchAcademy, ResearchLibrary, ResearchTools, ResearchJournals, ResearchDiscipline } from './Research';
+import { RESEARCH_DISCIPLINES } from './research';
+import { fileUrl, FILE_KINDS, fmtSize, COURSE_BUTTONS, courseLabel } from './admin';
 import type { FileRow } from './admin';
 import type { Dept, Program, SpecDetail, Track, Term, ListSection, Software, Faculty } from './data';
 
@@ -80,53 +83,6 @@ const STATS = [
     { icon: 'flask', value: '20+', label: 'Research Projects' },
     { icon: 'landmark', value: '10+', label: 'Departments' },
 ];
-
-/* ---------- Viewport sync (works inside the File viewer iframe) ----------
-   The viewer embeds the app full-height and scrolls the parent page, so
-   window.scrollY inside the app never changes. The shell posts the real
-   viewport rect as a message; we also listen to window scroll for the
-   directly-opened case. Both feed `vp` and fire 'azu-vp'. */
-const vp = { top: 0, height: 900 };
-if (typeof window !== 'undefined') {
-    window.addEventListener('message', (e) => {
-        const d = e.data as { source?: string; type?: string; value?: { top?: number; height?: number } };
-        if (d && d.source === 'instinct-shell' && d.type === 'modal-viewport' && d.value) {
-            vp.top = (d.value.top || 0) + 24;
-            vp.height = d.value.height || 900;
-            window.dispatchEvent(new CustomEvent('azu-vp'));
-        }
-    });
-    window.addEventListener('scroll', () => {
-        vp.top = window.scrollY;
-        vp.height = window.innerHeight;
-        window.dispatchEvent(new CustomEvent('azu-vp'));
-    }, { passive: true });
-}
-function onVp(cb: () => void) {
-    const h = () => cb();
-    window.addEventListener('azu-vp', h);
-    cb();
-    return () => window.removeEventListener('azu-vp', h);
-}
-function inView(el: HTMLElement, lead = 0.92) {
-    const r = el.getBoundingClientRect();
-    return r.top < vp.top + vp.height * lead && r.bottom > vp.top - 60;
-}
-
-/* ---------- Scroll reveal ---------- */
-
-function Reveal({ className = '', stagger = false, children }: { className?: string; stagger?: boolean; children: React.ReactNode }) {
-    const ref = React.useRef<HTMLDivElement>(null);
-    React.useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-        const show = () => el.classList.add('is-in');
-        const off = onVp(() => { if (inView(el)) show(); });
-        const fallback = window.setTimeout(show, 8000);
-        return () => { off(); window.clearTimeout(fallback); };
-    }, []);
-    return <div ref={ref} className={`azu-reveal${stagger ? ' azu-stagger' : ''}${className ? ' ' + className : ''}`}>{children}</div>;
-}
 
 /* ---------- Count-up stat ---------- */
 
@@ -240,15 +196,6 @@ function Footer() {
             <span>Science Creates Possibilities — AZU Science</span>
         </div>
     </footer>;
-}
-
-function Crumb({ items }: { items: { label: string; to?: string }[] }) {
-    return <nav className="azu-crumb" aria-label="Breadcrumb">
-        {items.map((item, i) => <span key={i} className="azu-crumb-item">
-            {i > 0 && <span className="azu-crumb-sep">/</span>}
-            {item.to ? <Link to={item.to}>{item.label}</Link> : <span className="azu-crumb-here">{item.label}</span>}
-        </span>)}
-    </nav>;
 }
 
 function PhotoSlot({ label, ratio }: { label: string; ratio?: string }) {
@@ -682,6 +629,23 @@ function TermPage({ faculty, dept, year, term, ti }: { faculty: Faculty; dept: D
     </section>;
 }
 
+function useCourseLive(faculty: string, dept: string, year: number, label: string) {
+    const [rows, setRows] = React.useState<FileRow[]>([]);
+    const [msg, setMsg] = React.useState('');
+    React.useEffect(() => {
+        let on = true;
+        const q = `${SUPA_URL}/rest/v1/files?select=id,title,kind,size_bytes&faculty=eq.${faculty}&department=eq.${dept}&year=eq.${year}&course_code=eq.${encodeURIComponent(label)}&status=eq.live&order=created_at.desc&limit=100`;
+        fetch(q, { headers: { apikey: SUPA_KEY } }).then(r => r.ok ? r.json() : []).then(d => { if (on) setRows(Array.isArray(d) ? d : []); }).catch(() => {});
+        return () => { on = false; };
+    }, [faculty, dept, year, label]);
+    const open = async (id: number) => {
+        setMsg('');
+        if (!getAuth()) { setMsg('تحميل الملفات يتطلب تسجيل الدخول.'); return; }
+        try { window.open(await fileUrl(id), '_blank'); } catch (ex) { setMsg(ex instanceof Error ? ex.message : 'تعذر فتح الملف.'); }
+    };
+    return { rows: rows as (FileRow & { kind: string })[], open, msg };
+}
+
 function CoursePage({ faculty, dept, year, term, ti }: { faculty: Faculty; dept: Dept; year: number; term: number; ti?: number }) {
     const tracks = bylawTracks(faculty.id, dept.id, year);
     const trackIdx = tracks.length > 1 ? (ti ?? -1) : 0;
@@ -697,6 +661,7 @@ function CoursePage({ faculty, dept, year, term, ti }: { faculty: Faculty; dept:
         <Flow404 backTo={`${base}/${term}`} backLabel={`العودة لمواد ${TERM_NAMES[term]}`} />
     </section>;
     const files = COURSE_FILES[`${dept.id}/${year}/${term}/${trackIdx}/${ci}`] ?? {};
+    const live = useCourseLive(faculty.id, dept.id, year, courseLabel(course));
     return <section className="azu-section azu-flow">
         <Crumb items={acadCrumb(faculty, dept, year, tracks.length > 1 ? { ti: trackIdx, name: track.track } : undefined, term, course[1])} />
         <div className="azu-kicker">{dept.en.toUpperCase()} — YEAR {year} — TERM {term}</div>
@@ -705,12 +670,17 @@ function CoursePage({ faculty, dept, year, term, ti }: { faculty: Faculty; dept:
         <div className="azu-res-grid" dir="rtl">
             {RESOURCE_TYPES.map(r => {
                 const list = files[r.id] ?? [];
+                const kindId = COURSE_BUTTONS.find(b => b.res === r.id)?.kind;
+                const lf = live.rows.filter(f => f.kind === kindId);
                 return <div key={r.id} className="azu-res">
                     <Icon name={r.icon} size={24} />
                     <span className="azu-res-name">{r.ar}</span>
-                    {list.length === 0
+                    {list.length === 0 && lf.length === 0
                         ? <span className="azu-tag">قريبًا</span>
-                        : <div className="azu-res-links">{list.map(f => <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="azu-res-link">{f.title}</a>)}</div>}
+                        : <div className="azu-res-links">
+                            {list.map(f => <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="azu-res-link">{f.title}</a>)}
+                            {lf.map(f => <button key={f.id} type="button" className="azu-res-link azu-res-filebtn" onClick={() => live.open(f.id)}>{f.title} ({fmtSize(f.size_bytes)})</button>)}
+                        </div>}
                 </div>;
             })}
         </div>
@@ -1106,7 +1076,12 @@ export function App() {
                 <Route path="/tools/calculator" element={<Calculator />} />
                 <Route path="/tools/software" element={<SoftwareHub />} />
                 {SOFTWARE.map(s => <Route key={s.id} path={`/tools/software/${s.id}`} element={<SoftwarePage soft={s} />} />)}
-                <Route path="/research" element={<SimplePage kicker="RESEARCH" title="Research" icon="microscope"><p>قريبًا.</p></SimplePage>} />
+                <Route path="/research" element={<ResearchHub />} />
+                <Route path="/research/academy" element={<ResearchAcademy />} />
+                <Route path="/research/resources" element={<ResearchLibrary />} />
+                <Route path="/research/tools" element={<ResearchTools />} />
+                <Route path="/research/journals" element={<ResearchJournals />} />
+                {RESEARCH_DISCIPLINES.map(d => <Route key={d.id} path={`/research/discipline/${d.id}`} element={<ResearchDiscipline disc={d} />} />)}
                 <Route path="/opportunities" element={<SimplePage kicker="OPPORTUNITIES" title="Opportunities" icon="briefcase"><p>قريبًا.</p></SimplePage>} />
                 <Route path="/news" element={<section className="azu-section azu-flow">
                     <Crumb items={[{ label: 'Home', to: '/' }, { label: 'News' }]} />

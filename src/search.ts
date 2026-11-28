@@ -1,5 +1,6 @@
 import { DEPARTMENTS, PROGRAMS, SOFTWARE, SOFTWARE_DISCIPLINES, FACULTIES, YEAR_NAMES, TERM_NAMES } from './data';
 import { BYLAW } from './bylaw';
+import { RESEARCH_DISCIPLINES, RESOURCES, KIND_LABEL, discAr } from './research';
 
 export type SearchItem = { g: string; t: string; s?: string; to: string; k: string };
 
@@ -8,7 +9,7 @@ export const normAr = (s: string) => s.toLowerCase()
     .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
     .replace(/\s+/g, ' ').trim();
 
-const GROUPS = ['المواد الدراسية', 'الأقسام', 'البرامج المتميزة', 'البرامج العلمية', 'الكليات', 'الصفحات'] as const;
+const GROUPS = ['المواد الدراسية', 'الأقسام', 'البرامج المتميزة', 'البرامج العلمية', 'البحث العلمي', 'الكليات', 'الصفحات'] as const;
 export const SEARCH_GROUP_ORDER: string[] = [...GROUPS];
 
 export const SEARCH_ITEMS: SearchItem[] = (() => {
@@ -46,7 +47,18 @@ export const SEARCH_ITEMS: SearchItem[] = (() => {
     push('الصفحات', 'مكتبة البرامج العلمية', 'دليل البرامج لكل تخصص', '/tools/software', 'software hub');
     push('الصفحات', 'أدوات الطالب', undefined, '/tools', 'tools');
     push('الصفحات', 'الدليل الأكاديمي', 'الكليات والأقسام والمواد', '/academic', 'academic');
-    push('الصفحات', 'البحث العلمي', undefined, '/research', 'research');
+    push('الصفحات', 'البحث العلمي', 'Research Hub — المصادر والمنصات وأدوات الباحث', '/research', 'research بحث علمي');
+
+    push('البحث العلمي', 'Research Hub', 'بوابة البحث العلمي — أكاديمية ومكتبة وأدوات ودوريات', '/research', 'research hub بحث');
+    push('البحث العلمي', 'أكاديمية البحث العلمي', 'سبع مراحل من الأساسيات للنشر', '/research/academy', 'academy كورس تعلم بحث');
+    push('البحث العلمي', 'المكتبة العلمية', 'قواعد بيانات ومستودعات ومصادر لكل التخصصات', '/research/resources', 'resources مكتبة مصادر');
+    push('البحث العلمي', 'أدوات الباحث العلمي', 'اكتشاف الأبحاث، إدارة المراجع، الكتابة، التحليل', '/research/tools', 'tools أدوات باحث');
+    push('البحث العلمي', 'الدوريات والمجلات العلمية', 'الفرق بين المحكمة والمفترسة وقبل النشر', '/research/journals', 'journals نشر مجلة تحكيم');
+    for (const d of RESEARCH_DISCIPLINES) push('البحث العلمي', `بحث ${d.ar}`, d.en, `/research/discipline/${d.id}`, `research ${d.en} تخصص مصادر`);
+    for (const r of RESOURCES) {
+        const to = r.disc.length ? `/research/discipline/${r.disc[0]}` : '/research/resources';
+        push('البحث العلمي', r.name, [r.ar, KIND_LABEL[r.kind].ar, r.disc.map(discAr).join(' · ')].filter(Boolean).join(' · '), to, `${r.about} ${r.url}`);
+    }
     push('الصفحات', 'الفرص والمنح', undefined, '/opportunities', 'opportunities تدريب منح');
     push('الصفحات', 'الأخبار والإعلانات', undefined, '/news', 'news اخبار');
     push('الصفحات', 'المجتمع الطلابي', undefined, '/community', 'community');

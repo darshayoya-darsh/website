@@ -38,6 +38,14 @@ export function Icon({ name, size = 24 }: { name: string; size?: number }) {
         case 'mail': return <svg {...p}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 6L2 7" /></svg>;
         case 'facebook': return <svg {...p}><path d="M15 3h-2.5A4.5 4.5 0 0 0 8 7.5V10H5.5v4H8v7h4v-7h3l.5-4H12V7.5c0-.8.7-1.5 1.5-1.5H15z" /></svg>;
         case 'whatsapp': return <svg {...p}><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.4A8.5 8.5 0 1 1 21 11.5z" /><path d="M9 9.5c.5 2.5 3 5 5.5 5.5l1-1.5c.2-.3.6-.4.9-.2l1.5.8" transform="translate(0 .5) scale(.92)" /></svg>;
+        case 'dna': return <svg {...p}><path d="M7 3c0 4.5 10 4.5 10 9s-10 4.5-10 9" /><path d="M17 3c0 4.5-10 4.5-10 9s10 4.5 10 9" /><path d="M8.6 6h6.8M8.6 18h6.8M9.4 12h5.2" /></svg>;
+        case 'paw': return <svg {...p}><circle cx="7" cy="9" r="1.8" /><circle cx="12" cy="7" r="1.8" /><circle cx="17" cy="9" r="1.8" /><path d="M12 12.5c2.9 0 5 2.2 5 4.1S15 21 12 21s-5-2.5-5-4.4 2.1-4.1 5-4.1z" /></svg>;
+        case 'planet': return <svg {...p}><circle cx="12" cy="12" r="5.6" /><ellipse cx="12" cy="12" rx="10.4" ry="4.1" transform="rotate(-22 12 12)" /></svg>;
+        case 'cloud': return <svg {...p}><path d="M17.5 19a4.5 4.5 0 0 0 .4-8.97A6 6 0 0 0 6.2 11.6 3.5 3.5 0 0 0 7 19h10.5z" /><path d="M9 21.5l.8-1.5M13 21.5l.8-1.5" /></svg>;
+        case 'chip': return <svg {...p}><rect x="7" y="7" width="10" height="10" rx="2" /><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" /></svg>;
+        case 'brain': return <svg {...p}><path d="M12 5a3 3 0 0 0-3 3 2.6 2.6 0 0 0-1 5v3a3 3 0 0 0 4 2.8V5z" /><path d="M12 5a3 3 0 0 1 3 3 2.6 2.6 0 0 1 1 5v3a3 3 0 0 1-4 2.8V5z" /></svg>;
+        case 'database': return <svg {...p}><ellipse cx="12" cy="6" rx="8" ry="3" /><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" /><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg>;
+        case 'journal': return <svg {...p}><path d="M12 6.5C10 5 7.5 4.5 4 5v13c3.5-.5 6 0 8 1.5 2-1.5 4.5-2 8-1.5V5c-3.5-.5-6 0-8 1.5z" /><path d="M12 6.5v13" /></svg>;
         default: return null;
     }
 }

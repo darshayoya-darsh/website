@@ -120,6 +120,7 @@ function arError(code: string, msg: string): string {
     if (m.includes('user_already') || m.includes('already registered') || m.includes('already been registered')) return 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.';
     if (m.includes('weak_password') || m.includes('at least 6')) return 'كلمة المرور ضعيفة؛ ٦ أحرف على الأقل.';
     if (m.includes('email_not_confirmed')) return 'الحساب غير مؤكد بعد؛ راجع بريدك الإلكتروني.';
+    if (m.includes('otp_expired') || m.includes('expired') || m.includes('invalid')) return 'الكود غير صحيح أو انتهت صلاحيته. اطلب كودًا جديدًا.';
     if (m.includes('rate_limit') || m.includes('over_rate')) return 'محاولات كثيرة؛ انتظر قليلًا ثم أعد المحاولة.';
     return 'حدث خطأ غير متوقع. أعد المحاولة.';
 }
@@ -269,4 +270,13 @@ export async function fetchAvatarUrl(path: string): Promise<string | null> {
    confirmation until the reference-list model is decided). */
 export async function resendConfirmation(email: string): Promise<void> {
     await api(`/auth/v1/resend${REDIRECT_Q}`, { type: 'signup', email });
+}
+
+/* Confirm a new account with the numeric code from the signup email. On
+   success Supabase returns a session, so the student is signed in at once. */
+export async function verifyCode(email: string, code: string): Promise<AuthUser> {
+    const data = await api('/auth/v1/verify', { type: 'signup', email, token: code.replace(/\s+/g, '') });
+    const u = await loadProfile(data.access_token, data.user);
+    setSession({ access_token: data.access_token, refresh_token: data.refresh_token, user: u, justConfirmed: true });
+    return u;
 }

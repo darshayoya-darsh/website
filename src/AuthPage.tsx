@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
-import { useAuth, signIn, signUp, signOut, resendConfirmation, hasAccountFlag, uploadAvatar, removeAvatar } from './auth';
+import { useAuth, signIn, signUp, signOut, resendConfirmation, verifyCode, hasAccountFlag, uploadAvatar, removeAvatar } from './auth';
 import { myGrants } from './admin';
 import { Avatar, downscaleAvatar } from './Avatar';
 
@@ -79,6 +79,8 @@ export function AuthPage() {
     const [unconfirmed, setUnconfirmed] = React.useState(false);
     const [resent, setResent] = React.useState(false);
     const [confirmSent, setConfirmSent] = React.useState(false);
+    const [code, setCode] = React.useState('');
+    const [codeMsg, setCodeMsg] = React.useState('');
 
     if (session) {
         return <section className="azu-section azu-flow">
@@ -101,12 +103,35 @@ export function AuthPage() {
     }
 
     if (confirmSent) {
+        const doVerify = async () => {
+            setErr('');
+            if (code.replace(/\D/g, '').length < 6) { setErr('اكتب الكود المكوّن من الأرقام المرسل إلى بريدك.'); return; }
+            setBusy(true);
+            try { await verifyCode(email.trim(), code); }
+            catch (ex) { setErr(ex instanceof Error ? ex.message : 'حدث خطأ غير متوقع. أعد المحاولة.'); }
+            finally { setBusy(false); }
+        };
+        const doResend = async () => {
+            setErr(''); setCodeMsg(''); setBusy(true);
+            try { await resendConfirmation(email.trim()); setCodeMsg('أرسلنا كودًا جديدًا إلى بريدك.'); }
+            catch { setErr('تعذر الإرسال الآن؛ أعد المحاولة بعد قليل.'); }
+            finally { setBusy(false); }
+        };
         return <section className="azu-section azu-flow">
             <div className="azu-kicker">STUDENT ACCOUNT</div>
-            <h2 className="azu-title">تفقد بريدك</h2>
+            <h2 className="azu-title">أدخل كود التأكيد</h2>
             <div className="azu-auth-card" dir="rtl">
-                <p className="azu-auth-note">أرسلنا رابط تأكيد إلى <bdi>{email}</bdi>. افتح البريد واضغط الرابط، ثم سجّل دخولك من هنا.</p>
-                <button type="button" className="azu-btn azu-btn-outline" onClick={() => { setConfirmSent(false); setMode('in'); }}>العودة لتسجيل الدخول</button>
+                <p className="azu-auth-note">أرسلنا كودًا من الأرقام إلى <bdi>{email}</bdi>. اكتبه هنا لتفعيل حسابك.</p>
+                <label className="azu-field">كود التأكيد
+                    <input className="azu-input" inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={10} value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doVerify(); } }} />
+                </label>
+                {err && <div className="azu-auth-err" role="alert">{err}</div>}
+                {codeMsg && <p className="azu-auth-note">{codeMsg}</p>}
+                <button type="button" className="azu-btn azu-btn-primary" disabled={busy} onClick={doVerify}>{busy ? 'لحظات…' : 'تأكيد'}</button>
+                <button type="button" className="azu-btn azu-btn-outline" disabled={busy} onClick={doResend}>إرسال كود جديد</button>
+                <button type="button" className="azu-btn azu-btn-outline" onClick={() => { setConfirmSent(false); setCode(''); setErr(''); setMode('in'); }}>العودة لتسجيل الدخول</button>
             </div>
         </section>;
     }
@@ -160,7 +185,7 @@ export function AuthPage() {
                 </label>}
                 {err && <div className="azu-auth-err" role="alert">{err}</div>}
                 {unconfirmed && !resent && <button type="button" className="azu-btn azu-btn-outline" disabled={busy}
-                    onClick={async () => { setBusy(true); try { await resendConfirmation(email.trim()); setResent(true); } catch { setErr('تعذر الإرسال الآن؛ أعد المحاولة بعد قليل.'); } finally { setBusy(false); } }}>
+                    onClick={async () => { setBusy(true); try { await resendConfirmation(email.trim()); setErr(''); setUnconfirmed(false); setConfirmSent(true); } catch { setErr('تعذر الإرسال الآن؛ أعد المحاولة بعد قليل.'); } finally { setBusy(false); } }}>
                     إعادة إرسال بريد التأكيد
                 </button>}
                 {unconfirmed && resent && <p className="azu-auth-note">تم إرسال بريد التأكيد مرة أخرى إلى <bdi>{email}</bdi>. افتحه واضغط الرابط ثم سجّل دخولك.</p>}

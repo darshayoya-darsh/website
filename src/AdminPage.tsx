@@ -2,9 +2,10 @@ import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
 import { useAuth } from './auth';
-import { DEPARTMENTS, PROGRAMS, FACULTIES, YEAR_NAMES } from './data';
+import { DEPARTMENTS, PROGRAMS, FACULTIES, YEAR_NAMES, TERM_NAMES } from './data';
+import { BYLAW } from './bylaw';
 import {
-    Grant, FileRow, Scope, FILE_KINDS, AccountRow,
+    Grant, FileRow, Scope, FILE_KINDS, COURSE_BUTTONS, courseLabel, AccountRow,
     myGrants, addGrant, removeGrant, listFiles, listAccounts, canManage,
     uploadCourseFile, deleteFile, fileUrl, validateUpload, fmtSize,
 } from './admin';
@@ -48,7 +49,7 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
     const [department, setDepartment] = React.useState('');
     const [year, setYear] = React.useState('');
     const [course, setCourse] = React.useState('');
-    const [kind, setKind] = React.useState('lecture');
+    const [kind, setKind] = React.useState('');
     const [title, setTitle] = React.useState('');
     const [file, setFile] = React.useState<File | null>(null);
     const [busy, setBusy] = React.useState(false);
@@ -61,7 +62,22 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
     const allowed = (f: string, d: string, y: number) => canManage(grants, isSuper, f, d, y);
     const years = [1, 2, 3, 4].filter((y) => !faculty || !department || allowed(faculty, department, y));
 
-    const ready = faculty && department && year && course.trim() && file && !busy;
+    /* Courses come from the bylaw for the chosen department and year, so the
+       admin picks a course instead of typing it. Programs have no bylaw list. */
+    const courseOpts = React.useMemo(() => {
+        if (category !== 'basic' || !department || !year) return [] as { label: string; sub: string }[];
+        const seen = new Set<string>(); const out: { label: string; sub: string }[] = [];
+        const tr = (BYLAW[department]?.[Number(year)] ?? []).filter((t) => faculty === 'boys-cairo' || !t.cairoOnly);
+        for (const t of tr) for (const term of [1, 2]) for (const c of (term === 1 ? t.t1 : t.t2)) {
+            const label = courseLabel(c);
+            if (seen.has(label)) continue;
+            seen.add(label);
+            out.push({ label, sub: `${TERM_NAMES[term]}${tr.length > 1 ? ` — ${t.track}` : ''}` });
+        }
+        return out;
+    }, [category, department, year, faculty]);
+    const pickList = category === 'basic' && courseOpts.length > 0;
+    const ready = faculty && department && year && course.trim() && kind && file && !busy;
 
     const upload = async () => {
         if (!ready || !file) return;
@@ -75,7 +91,7 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
                 course_code: course.trim(), title: title.trim() || file.name, kind,
             }, file);
             setOk(`تم رفع «${row.title}» وأصبح متاحًا للطلاب.`);
-            setFile(null); setTitle(''); setCourse('');
+            setFile(null); setTitle(''); setCourse(''); setKind('');
             onUploaded(row);
         } catch (ex) {
             setErr(ex instanceof Error ? ex.message : 'تعذر رفع الملف. أعد المحاولة.');
@@ -94,23 +110,30 @@ function Uploader({ grants, isSuper, onUploaded }: { grants: Grant[]; isSuper: b
                 <option value="basic">قسم أساسي</option>
                 <option value="special">برنامج متميز</option>
             </Select>
-            <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={(v) => setDepartment(v)}>
+            <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={(v) => { setDepartment(v); setCourse(''); }}>
                 <option value="">{category === 'special' ? 'اختار البرنامج…' : 'اختار القسم…'}</option>
                 {tracks.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
             </Select>
-            <Select value={year} label="السنة" onChange={(v) => setYear(v)}>
+            <Select value={year} label="السنة" onChange={(v) => { setYear(v); setCourse(''); }}>
                 <option value="">اختار السنة…</option>
                 {years.map((y) => <option key={y} value={y}>{YEAR_NAMES[y]}</option>)}
-            </Select>
-            <Select value={kind} label="نوع الملف" onChange={setKind}>
-                {FILE_KINDS.map((k) => <option key={k.id} value={k.id}>{k.ar}</option>)}
             </Select>
         </div>
         {faculty && department && year && !allowed(faculty, department, Number(year)) &&
             <p className="azu-admin-err" role="alert">هذا الاختيار خارج نطاق صلاحيتك.</p>}
-        <label className="azu-field">اسم المقرر
-            <input className="azu-input" value={course} onChange={(e) => setCourse(e.target.value)} onKeyDown={enter} placeholder="مثال: كيميا عضوية" />
-        </label>
+        {pickList
+            ? <Select value={course} label="المقرر" onChange={setCourse}>
+                <option value="">اختار المقرر…</option>
+                {courseOpts.map((o) => <option key={o.label} value={o.label}>{o.label} ({o.sub})</option>)}
+            </Select>
+            : <label className="azu-field">{category === 'special' ? 'اسم المقرر (البرنامج المتميز)' : 'المقرر'}
+                <input className="azu-input" value={course} onChange={(e) => setCourse(e.target.value)} onKeyDown={enter} placeholder={department && year ? 'اكتب اسم المقرر' : 'اختار القسم والسنة الأول'} />
+            </label>}
+        <div className="azu-field">يتحط في أنهي زرار جوه المقرر؟
+            <div className="azu-filters">
+                {COURSE_BUTTONS.map((b) => <button key={b.kind} type="button" className={`azu-filter${kind === b.kind ? ' is-on' : ''}`} onClick={() => setKind(b.kind)}>{b.ar}</button>)}
+            </div>
+        </div>
         <label className="azu-field">عنوان الملف (اختياري؛ يُستخدم اسم الملف تلقائيًا)
             <input className="azu-input" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={enter} placeholder="مثال: امتحان منتصف العام ٢٠٢٥" />
         </label>

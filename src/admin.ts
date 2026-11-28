@@ -41,6 +41,16 @@ export const FILE_KINDS: { id: string; ar: string }[] = [
     { id: 'other', ar: 'أخرى' },
 ];
 
+/* The four buttons inside every course page; file kind ids map to them. */
+export const COURSE_BUTTONS: { kind: string; res: string; ar: string }[] = [
+    { kind: 'exam', res: 'exams', ar: 'امتحانات سابقة' },
+    { kind: 'lecture', res: 'lectures', ar: 'المحاضرات' },
+    { kind: 'slides', res: 'slides', ar: 'سلايدات الدكتور' },
+    { kind: 'book', res: 'book', ar: 'كتاب الكلية' },
+];
+
+export const courseLabel = (c: [string, string]) => (c[0] ? `${c[0]} ${c[1]}` : c[1]);
+
 export const MAX_FILE_BYTES = 70 * 1024 * 1024;
 
 const ACCEPT_EXT = /\.(pdf|docx?|pptx?|xlsx?|jpe?g|png|webp)$/i;
