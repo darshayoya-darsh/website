@@ -1318,3 +1318,23 @@ a.azu-social-link:hover { background: #e6efe9; transform: translateY(-2px); }
 .azu-social-soon { display: inline-flex; align-items: center; gap: 8px; }
 .azu-social-soon em { font-style: normal; font-size: .78rem; opacity: .75; }
 .azu-footer-col a.azu-social-link { width: 38px; height: 38px; padding: 0; margin: 0; display: inline-flex; flex: none; border-radius: 50%; line-height: 0; }
+
+/* Admin dashboard shell */
+.azu-admin-shell { display: grid; grid-template-columns: 220px 1fr; gap: 22px; align-items: start; margin-top: 18px; direction: rtl; }
+.azu-admin-nav { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 84px; }
+.azu-admin-tab { display: flex; align-items: center; gap: 10px; border: 1px solid transparent; background: transparent; color: #0f3d36; padding: 11px 14px; border-radius: 12px; font: inherit; cursor: pointer; text-align: right; }
+.azu-admin-tab:hover { background: #e6efe9; }
+.azu-admin-tab.is-on { background: #0f4a40; color: #fff; }
+.azu-admin-badge { margin-inline-start: auto; min-width: 22px; height: 22px; border-radius: 11px; background: #c9a24b; color: #1b1405; font-size: .78rem; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; font-weight: 700; }
+.azu-admin-main { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+.azu-admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+.azu-admin-stat { background: #f5f1e8; border: 1px solid rgba(15,61,54,.12); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.azu-admin-stat strong { font-size: 1.8rem; color: #0f4a40; }
+.azu-modal-back { position: fixed; inset: 0; background: rgba(8,28,24,.55); display: flex; align-items: center; justify-content: center; z-index: 80; padding: 18px; }
+.azu-modal { background: #fffdf8; border-radius: 18px; padding: 24px; max-width: 440px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
+.azu-modal-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .azu-admin-shell { grid-template-columns: 1fr; }
+  .azu-admin-nav { flex-direction: row; overflow-x: auto; position: static; padding-bottom: 6px; }
+  .azu-admin-tab { white-space: nowrap; }
+}

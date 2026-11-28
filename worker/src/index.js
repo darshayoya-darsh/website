@@ -185,8 +185,8 @@ async function verifyUser(env, token) {
 }
 
 /* Scope check against the database's own rule (admin_grants + super admins). */
-async function canManage(env, token, faculty, track, year) {
-    const r = await fetch(`${env.SUPA_URL}/rest/v1/rpc/can_manage`, {
+async function canManage(env, token, faculty, track, year, fn = 'can_manage') {
+    const r = await fetch(`${env.SUPA_URL}/rest/v1/rpc/${fn}`, {
         method: 'POST',
         headers: {
             apikey: env.SUPA_KEY,
@@ -360,8 +360,8 @@ async function handleDelete(request, env) {
     const rows = got.ok ? await got.json() : [];
     const row = rows[0];
     if (!row) return json({ error: 'الملف غير موجود.' }, 404);
-    if (!(await canManage(env, token, row.faculty, row.department, row.year))) {
-        return json({ error: 'ليس لديك صلاحية على هذا النطاق.' }, 403);
+    if (!(await canManage(env, token, row.faculty, row.department, row.year, 'can_manage_full'))) {
+        return json({ error: 'ليس لديك صلاحية حذف على هذا النطاق.' }, 403);
     }
 
     // DB row first (RLS enforces scope), then the object; a failed object

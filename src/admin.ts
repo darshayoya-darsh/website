@@ -17,6 +17,7 @@ export interface Grant {
     category: 'basic' | 'special';
     track: string | null;
     year: number | null;
+    perms: 'full' | 'upload_only';
 }
 
 export interface FileRow {
@@ -82,7 +83,7 @@ async function rest(path: string, init?: RequestInit): Promise<Response> {
 
 /* RLS returns the caller's own grants; the super admin sees all of them. */
 export async function myGrants(): Promise<Grant[]> {
-    const r = await rest('/admin_grants?select=id,email,scope,faculty,category,track,year&order=created_at.desc');
+    const r = await rest('/admin_grants?select=id,email,scope,faculty,category,track,year,perms&order=created_at.desc');
     return r.json();
 }
 
@@ -92,6 +93,58 @@ export async function addGrant(g: Omit<Grant, 'id'>): Promise<void> {
 
 export async function removeGrant(id: number): Promise<void> {
     await rest(`/admin_grants?id=eq.${id}`, { method: 'DELETE' });
+}
+
+/* Faculty admins do not write grants; they send a request that the super
+   admin approves. The database functions enforce this, not the page. */
+export interface AdminRequest {
+    id: number;
+    action: 'add' | 'remove';
+    target_email: string;
+    scope: Scope | null;
+    faculty: string;
+    category: 'basic' | 'special';
+    track: string | null;
+    year: number | null;
+    perms: 'full' | 'upload_only';
+    status: 'pending' | 'approved' | 'rejected';
+    requested_by: string;
+    note: string | null;
+    created_at: string;
+}
+
+export async function listRequests(): Promise<AdminRequest[]> {
+    const r = await rest('/admin_requests?select=id,action,target_email,scope,faculty,category,track,year,perms,status,requested_by,note,created_at&order=created_at.desc&limit=200');
+    return r.json();
+}
+
+export async function requestAdd(g: { email: string; scope: Scope; faculty: string; category: string; track: string | null; year: number | null; perms: string }): Promise<void> {
+    await rest('/rpc/request_grant_add', {
+        method: 'POST',
+        body: JSON.stringify({ p_email: g.email, p_scope: g.scope, p_faculty: g.faculty, p_category: g.category, p_track: g.track, p_year: g.year, p_perms: g.perms }),
+    });
+}
+
+export async function requestRemove(grantId: number): Promise<void> {
+    await rest('/rpc/request_grant_remove', { method: 'POST', body: JSON.stringify({ p_grant_id: grantId }) });
+}
+
+export async function approveRequest(id: number): Promise<void> {
+    await rest('/rpc/approve_request', { method: 'POST', body: JSON.stringify({ p_id: id }) });
+}
+
+export async function rejectRequest(id: number): Promise<void> {
+    await rest('/rpc/reject_request', { method: 'POST', body: JSON.stringify({ p_id: id }) });
+}
+
+/* Delete needs full rights; upload-only admins never see the delete button. */
+export function canDelete(grants: Grant[], isSuper: boolean, faculty: string, department: string, year: number): boolean {
+    if (isSuper) return true;
+    return grants.some((g) => g.perms !== 'upload_only' && g.faculty === faculty && (
+        g.scope === 'faculty'
+        || (g.scope === 'track' && g.track === department)
+        || (g.scope === 'cohort' && g.track === department && g.year === year)
+    ));
 }
 
 export interface AccountRow {

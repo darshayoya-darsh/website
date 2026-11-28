@@ -5,8 +5,9 @@ import { useAuth } from './auth';
 import { DEPARTMENTS, PROGRAMS, FACULTIES, YEAR_NAMES, TERM_NAMES } from './data';
 import { BYLAW } from './bylaw';
 import {
-    Grant, FileRow, Scope, FILE_KINDS, COURSE_BUTTONS, courseLabel, AccountRow,
-    myGrants, addGrant, removeGrant, listFiles, listAccounts, canManage,
+    Grant, FileRow, Scope, AdminRequest, FILE_KINDS, COURSE_BUTTONS, courseLabel, AccountRow,
+    myGrants, addGrant, removeGrant, listFiles, listAccounts, canManage, canDelete,
+    listRequests, requestAdd, requestRemove, approveRequest, rejectRequest,
     uploadCourseFile, deleteFile, fileUrl, validateUpload, fmtSize,
 } from './admin';
 
@@ -34,6 +35,27 @@ const scopeLabel = (g: Grant) => {
     if (g.scope === 'track') return `${trackKind(cat)} ${trackName(cat, g.track || '')} — ${facultyName(g.faculty)}`;
     return `${trackKind(cat)} ${trackName(cat, g.track || '')}، ${YEAR_NAMES[g.year || 1]} — ${facultyName(g.faculty)}`;
 };
+
+function ConfirmDialog({ title, text, confirmLabel, busy, onConfirm, onCancel }: {
+    title: string; text: string; confirmLabel: string; busy?: boolean; onConfirm: () => void; onCancel: () => void;
+}) {
+    return <div className="azu-modal-back" role="presentation" onClick={onCancel}>
+        <div className="azu-modal" role="alertdialog" aria-modal="true" aria-label={title} dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="azu-admin-h">{title}</h3>
+            <p className="azu-admin-note">{text}</p>
+            <div className="azu-modal-actions">
+                <button type="button" className="azu-btn azu-btn-danger" onClick={onConfirm} disabled={busy}>{busy ? 'لحظات…' : confirmLabel}</button>
+                <button type="button" className="azu-btn azu-btn-outline" onClick={onCancel} disabled={busy}>إلغاء</button>
+            </div>
+        </div>
+    </div>;
+}
+
+const PERMS: { id: 'full' | 'upload_only'; ar: string }[] = [
+    { id: 'upload_only', ar: 'رفع الملفات فقط' },
+    { id: 'full', ar: 'رفع وحذف ملفات نطاقه' },
+];
+const permLabel = (p: string) => (p === 'upload_only' ? 'رفع الملفات فقط' : 'رفع وحذف');
 
 function Select({ value, onChange, children, label }: {
     value: string; onChange: (v: string) => void; children: React.ReactNode; label: string;
@@ -189,13 +211,12 @@ function FilesList({ grants, isSuper, files, setFiles }: {
             </div>
             <div className="azu-admin-row-actions">
                 <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => open(f.id)} disabled={busyId === f.id}>فتح</button>
-                {confirmId === f.id
-                    ? <button type="button" className="azu-btn azu-btn-danger azu-btn-sm" onClick={() => remove(f.id)} disabled={busyId === f.id}>
-                        {busyId === f.id ? 'جارٍ الحذف…' : 'تأكيد الحذف'}
-                    </button>
-                    : <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setConfirmId(f.id)}>حذف</button>}
+                {canDelete(grants, isSuper, f.faculty, f.department, f.year) &&
+                    <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setConfirmId(f.id)}>حذف</button>}
             </div>
         </div>)}
+        {confirmId !== 0 && <ConfirmDialog title="حذف الملف" text={`سيُحذف «${files.find((x) => x.id === confirmId)?.title || ''}» نهائيًا ولن يظهر للطلاب. لا يمكن التراجع.`}
+            confirmLabel="تأكيد الحذف" busy={busyId === confirmId} onConfirm={() => remove(confirmId)} onCancel={() => setConfirmId(0)} />}
     </div>;
 }
 
@@ -206,6 +227,8 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
     const [category, setCategory] = React.useState<'basic' | 'special'>('basic');
     const [department, setDepartment] = React.useState('');
     const [year, setYear] = React.useState('');
+    const [perms, setPerms] = React.useState<'full' | 'upload_only'>('full');
+    const [rmId, setRmId] = React.useState(0);
     const [busy, setBusy] = React.useState(false);
     const [err, setErr] = React.useState('');
     const [ok, setOk] = React.useState('');
@@ -219,7 +242,7 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
         setBusy(true); setErr(''); setOk('');
         try {
             await addGrant({
-                email: email.trim().toLowerCase(), scope, faculty, category,
+                email: email.trim().toLowerCase(), scope, faculty, category, perms,
                 track: scope === 'faculty' ? null : department,
                 year: scope === 'cohort' ? Number(year) : null,
             });
@@ -233,6 +256,7 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
         setErr('');
         try { await removeGrant(id); await reload(); }
         catch { setErr('تعذر الحذف. أعد المحاولة.'); }
+        finally { setRmId(0); }
     };
     const enter = (e: React.KeyboardEvent) => { if (e.key === 'Enter') add(); };
 
@@ -261,6 +285,9 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
                 <option value="">اختار السنة…</option>
                 {[1, 2, 3, 4].map((y) => <option key={y} value={y}>{YEAR_NAMES[y]}</option>)}
             </Select>}
+            <Select value={perms} label="مستوى الصلاحية" onChange={(v) => setPerms(v as 'full' | 'upload_only')}>
+                {PERMS.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
+            </Select>
         </div>
         {err && <p className="azu-admin-err" role="alert">{err}</p>}
         {ok && <p className="azu-admin-ok" role="status">{ok}</p>}
@@ -271,14 +298,146 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
             {grants.map((g) => <div key={g.id} className="azu-admin-row">
                 <div className="azu-admin-row-main">
                     <span className="azu-admin-row-title" dir="ltr">{g.email}</span>
-                    <span className="azu-admin-row-meta">{scopeLabel(g)}</span>
+                    <span className="azu-admin-row-meta">{scopeLabel(g)} · {permLabel(g.perms)}</span>
                 </div>
                 <div className="azu-admin-row-actions">
-                    <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => remove(g.id)}>إزالة</button>
+                    <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setRmId(g.id)}>إزالة</button>
                 </div>
             </div>)}
             {grants.length === 0 && <p className="azu-admin-note">لا يوجد مشرفون معيّنون بعد.</p>}
         </div>
+        {rmId !== 0 && <ConfirmDialog title="إزالة مشرف" text={`ستُسحب كل صلاحيات ${grants.find((x) => x.id === rmId)?.email || ''} فورًا.`}
+            confirmLabel="تأكيد الإزالة" onConfirm={() => remove(rmId)} onCancel={() => setRmId(0)} />}
+    </div>;
+}
+
+/* مشرف الكلية: لا يعدّل الصلاحيات مباشرة. يرسل طلب إضافة أو إزالة داخل كليته
+   فقط، ولا يُطبَّق إلا بعد موافقة السوبر أدمن. */
+function FacultyAdminsPanel({ grants, facultyIds, requests, reloadAll }: {
+    grants: Grant[]; facultyIds: string[]; requests: AdminRequest[]; reloadAll: () => Promise<void>;
+}) {
+    const [email, setEmail] = React.useState('');
+    const [faculty, setFaculty] = React.useState(facultyIds[0] || '');
+    const [scope, setScope] = React.useState<Scope>('cohort');
+    const [category, setCategory] = React.useState<'basic' | 'special'>('basic');
+    const [department, setDepartment] = React.useState('');
+    const [year, setYear] = React.useState('');
+    const [perms, setPerms] = React.useState<'full' | 'upload_only'>('upload_only');
+    const [rmId, setRmId] = React.useState(0);
+    const [busy, setBusy] = React.useState(false);
+    const [err, setErr] = React.useState('');
+    const [ok, setOk] = React.useState('');
+
+    const depts = DEPARTMENTS.filter((d) => !d.onlyFaculties || d.onlyFaculties.includes(faculty));
+    const tracks = category === 'special' ? PROGRAMS : depts;
+    const ready = email.includes('@') && faculty && department && (scope === 'track' || year);
+    const mine = grants.filter((g) => facultyIds.includes(g.faculty) && g.scope !== 'faculty');
+    const pendingRemove = new Set(requests.filter((r) => r.status === 'pending' && r.action === 'remove').map((r) => r.target_email + r.track + r.year));
+
+    const send = async () => {
+        if (!ready || busy) return;
+        setBusy(true); setErr(''); setOk('');
+        try {
+            await requestAdd({ email: email.trim().toLowerCase(), scope, faculty, category, perms, track: department, year: scope === 'cohort' ? Number(year) : null });
+            setOk('أُرسل الطلب للسوبر أدمن. لن يُطبَّق إلا بعد موافقته.');
+            setEmail(''); await reloadAll();
+        } catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر إرسال الطلب.'); }
+        finally { setBusy(false); }
+    };
+    const askRemove = async (id: number) => {
+        setErr(''); setOk('');
+        try { await requestRemove(id); setOk('أُرسل طلب الإزالة للسوبر أدمن.'); await reloadAll(); }
+        catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر إرسال الطلب.'); }
+        finally { setRmId(0); }
+    };
+
+    return <div className="azu-admin-card" dir="rtl">
+        <h3 className="azu-admin-h">مشرفو كليتك</h3>
+        <p className="azu-admin-note">أي إضافة أو إزالة تُرسل للسوبر أدمن وتُطبَّق بعد موافقته فقط.</p>
+        <label className="azu-field">البريد الإلكتروني للمشرف الجديد
+            <input className="azu-input" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@example.com" />
+        </label>
+        <div className="azu-admin-grid">
+            {facultyIds.length > 1 && <Select value={faculty} label="الكلية" onChange={(v) => { setFaculty(v); setDepartment(''); }}>
+                {facultyIds.map((f) => <option key={f} value={f}>{facultyName(f)}</option>)}
+            </Select>}
+            <Select value={scope} label="النطاق" onChange={(v) => setScope(v as Scope)}>
+                {SCOPES.filter((x) => x.id !== 'faculty').map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
+            </Select>
+            <Select value={category} label="النوع" onChange={(v) => { setCategory(v as 'basic' | 'special'); setDepartment(''); }}>
+                <option value="basic">قسم أساسي</option>
+                <option value="special">برنامج متميز</option>
+            </Select>
+            <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={setDepartment}>
+                <option value="">اختار…</option>
+                {tracks.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
+            </Select>
+            {scope === 'cohort' && <Select value={year} label="السنة" onChange={setYear}>
+                <option value="">اختار السنة…</option>
+                {[1, 2, 3, 4].map((y) => <option key={y} value={y}>{YEAR_NAMES[y]}</option>)}
+            </Select>}
+            <Select value={perms} label="مستوى الصلاحية" onChange={(v) => setPerms(v as 'full' | 'upload_only')}>
+                {PERMS.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
+            </Select>
+        </div>
+        {err && <p className="azu-admin-err" role="alert">{err}</p>}
+        {ok && <p className="azu-admin-ok" role="status">{ok}</p>}
+        <button type="button" className="azu-btn azu-btn-primary" disabled={!ready || busy} onClick={send}>
+            <Icon name="user" size={15} /> {busy ? 'جارٍ الإرسال…' : 'إرسال طلب إضافة'}
+        </button>
+        <div className="azu-admin-grants">
+            {mine.map((g) => <div key={g.id} className="azu-admin-row">
+                <div className="azu-admin-row-main">
+                    <span className="azu-admin-row-title" dir="ltr">{g.email}</span>
+                    <span className="azu-admin-row-meta">{scopeLabel(g)} · {permLabel(g.perms)}</span>
+                </div>
+                <div className="azu-admin-row-actions">
+                    {pendingRemove.has(g.email + g.track + g.year)
+                        ? <span className="azu-tag">بانتظار الموافقة</span>
+                        : <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setRmId(g.id)}>طلب إزالة</button>}
+                </div>
+            </div>)}
+            {mine.length === 0 && <p className="azu-admin-note">لا يوجد مشرفون آخرون في كليتك.</p>}
+        </div>
+        {rmId !== 0 && <ConfirmDialog title="طلب إزالة مشرف" text={`سيُرسل طلب إزالة ${grants.find((x) => x.id === rmId)?.email || ''} للسوبر أدمن، ولا يُنفَّذ إلا بموافقته.`}
+            confirmLabel="إرسال الطلب" onConfirm={() => askRemove(rmId)} onCancel={() => setRmId(0)} />}
+    </div>;
+}
+
+const reqText = (r: AdminRequest) => `${r.action === 'add' ? 'إضافة' : 'إزالة'} ${r.target_email} — ${scopeLabel({ id: 0, email: r.target_email, scope: r.scope || 'cohort', faculty: r.faculty, category: r.category, track: r.track, year: r.year, perms: r.perms })} · ${permLabel(r.perms)}`;
+const STATUS_AR = { pending: 'بانتظار الموافقة', approved: 'تمت الموافقة', rejected: 'مرفوض' };
+
+/* الموافقات: السوبر أدمن يوافق أو يرفض بعد تأكيد. مشرف الكلية يرى حالة طلباته. */
+function RequestsPanel({ requests, isSuper, reloadAll }: { requests: AdminRequest[]; isSuper: boolean; reloadAll: () => Promise<void> }) {
+    const [dlg, setDlg] = React.useState<{ id: number; act: 'approve' | 'reject' } | null>(null);
+    const [busy, setBusy] = React.useState(false);
+    const [err, setErr] = React.useState('');
+    const decide = async () => {
+        if (!dlg) return;
+        setBusy(true); setErr('');
+        try { await (dlg.act === 'approve' ? approveRequest(dlg.id) : rejectRequest(dlg.id)); await reloadAll(); setDlg(null); }
+        catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر تنفيذ القرار.'); setDlg(null); }
+        finally { setBusy(false); }
+    };
+    const target = dlg ? requests.find((r) => r.id === dlg.id) : undefined;
+    return <div className="azu-admin-card" dir="rtl">
+        <h3 className="azu-admin-h">{isSuper ? 'طلبات بانتظار موافقتك' : 'حالة طلباتك'}</h3>
+        {err && <p className="azu-admin-err" role="alert">{err}</p>}
+        {requests.length === 0 && <p className="azu-admin-note">لا توجد طلبات.</p>}
+        {requests.map((r) => <div key={r.id} className="azu-admin-row">
+            <div className="azu-admin-row-main">
+                <span className="azu-admin-row-title">{reqText(r)}</span>
+                <span className="azu-admin-row-meta">{STATUS_AR[r.status]}</span>
+            </div>
+            {isSuper && r.status === 'pending' && <div className="azu-admin-row-actions">
+                <button type="button" className="azu-btn azu-btn-primary azu-btn-sm" onClick={() => setDlg({ id: r.id, act: 'approve' })}>موافقة</button>
+                <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" onClick={() => setDlg({ id: r.id, act: 'reject' })}>رفض</button>
+            </div>}
+        </div>)}
+        {dlg && target && <ConfirmDialog
+            title={dlg.act === 'approve' ? 'الموافقة على الطلب' : 'رفض الطلب'}
+            text={dlg.act === 'approve' ? `سيُطبَّق فورًا: ${reqText(target)}` : `لن يتغير شيء. الطلب: ${reqText(target)}`}
+            confirmLabel={dlg.act === 'approve' ? 'تأكيد الموافقة' : 'تأكيد الرفض'} busy={busy} onConfirm={decide} onCancel={() => setDlg(null)} />}
     </div>;
 }
 
@@ -338,11 +497,15 @@ function AccountsSection({ grants }: { grants: Grant[] }) {
     </div>;
 }
 
+type Tab = 'overview' | 'upload' | 'files' | 'admins' | 'approvals' | 'accounts';
+
 export function AdminPage() {
     const session = useAuth();
     const [grants, setGrants] = React.useState<Grant[] | null>(null);
     const [files, setFiles] = React.useState<FileRow[]>([]);
+    const [requests, setRequests] = React.useState<AdminRequest[]>([]);
     const [loadErr, setLoadErr] = React.useState('');
+    const [tab, setTab] = React.useState<Tab>('overview');
 
     const isSuper = session?.user.role === 'admin';
 
@@ -350,6 +513,8 @@ export function AdminPage() {
         try {
             const [g, f] = await Promise.all([myGrants(), listFiles()]);
             setGrants(g); setFiles(f);
+            /* Requests exist only after the approval migration; before it, hide the feature. */
+            listRequests().then(setRequests).catch(() => setRequests([]));
         } catch (ex) {
             setLoadErr(ex instanceof Error ? ex.message : 'تعذر تحميل البيانات.');
         }
@@ -357,38 +522,68 @@ export function AdminPage() {
 
     React.useEffect(() => { if (session) reload(); }, [session, reload]);
 
+    const head = <>
+        <div className="azu-kicker">ADMIN PORTAL</div>
+        <h2 className="azu-title">لوحة المشرفين</h2>
+    </>;
+
     if (!session) {
-        return <section className="azu-section azu-flow">
-            <div className="azu-kicker">ADMIN PORTAL</div>
-            <h2 className="azu-title">لوحة المشرفين</h2>
+        return <section className="azu-section azu-flow">{head}
             <p dir="rtl">هذه الصفحة للمشرفين فقط. سجّل دخولك أولًا.</p>
             <p><Link to="/signin" className="azu-btn azu-btn-primary">تسجيل الدخول</Link></p>
         </section>;
     }
-
-    if (grants === null && !loadErr) {
-        return <section className="azu-section azu-flow">
-            <div className="azu-kicker">ADMIN PORTAL</div>
-            <h2 className="azu-title">لوحة المشرفين</h2>
-            <p dir="rtl">لحظات…</p>
-        </section>;
-    }
-
+    if (grants === null && !loadErr) return <section className="azu-section azu-flow">{head}<p dir="rtl">لحظات…</p></section>;
     if (!isSuper && (grants || []).length === 0) {
-        return <section className="azu-section azu-flow">
-            <div className="azu-kicker">ADMIN PORTAL</div>
-            <h2 className="azu-title">لوحة المشرفين</h2>
+        return <section className="azu-section azu-flow">{head}
             <p dir="rtl">ليست لديك صلاحية مشرف. إن كنت تعتقد أن هذا خطأ، تواصل مع إدارة المنصة.</p>
         </section>;
     }
 
+    const g = grants || [];
+    const facultyIds = [...new Set(g.filter((x) => x.scope === 'faculty' && x.perms !== 'upload_only').map((x) => x.faculty))];
+    const isFacultyAdmin = !isSuper && facultyIds.length > 0;
+    const role = isSuper ? 'سوبر أدمن' : isFacultyAdmin ? 'مشرف كلية' : g.some((x) => x.scope === 'cohort') ? 'مشرف دفعة' : g.some((x) => x.scope === 'track') ? 'مشرف قسم' : 'مشرف';
+    const pending = requests.filter((r) => r.status === 'pending').length;
+    const mineFiles = files.filter((f) => canManage(g, !!isSuper, f.faculty, f.department, f.year));
+    const tabs: { id: Tab; ar: string; icon: string; badge?: number }[] = [
+        { id: 'overview', ar: 'نظرة عامة', icon: 'target' },
+        { id: 'upload', ar: 'رفع ملف', icon: 'upload' },
+        { id: 'files', ar: 'الملفات', icon: 'books' },
+        ...(isSuper || isFacultyAdmin ? [{ id: 'admins' as Tab, ar: 'المشرفون', icon: 'user' }] : []),
+        ...(isSuper || isFacultyAdmin ? [{ id: 'approvals' as Tab, ar: isSuper ? 'الموافقات' : 'طلباتي', icon: 'shield', badge: isSuper ? pending : 0 }] : []),
+        ...(isSuper ? [{ id: 'accounts' as Tab, ar: 'الحسابات', icon: 'users' }] : []),
+    ];
+
     return <section className="azu-section azu-flow">
-        <div className="azu-kicker">ADMIN PORTAL</div>
-        <h2 className="azu-title">لوحة المشرفين</h2>
+        {head}
         {loadErr && <p className="azu-admin-err" dir="rtl" role="alert">{loadErr}</p>}
-        <Uploader grants={grants || []} isSuper={!!isSuper} onUploaded={(row) => setFiles([row, ...files])} />
-        <FilesList grants={grants || []} isSuper={!!isSuper} files={files} setFiles={setFiles} />
-        {isSuper && <GrantsManager grants={grants || []} reload={reload} />}
-        {isSuper && <AccountsSection grants={grants || []} />}
+        <div className="azu-admin-shell">
+            <nav className="azu-admin-nav" dir="rtl" aria-label="أقسام اللوحة">
+                {tabs.map((t) => <button key={t.id} type="button" className={`azu-admin-tab${tab === t.id ? ' is-on' : ''}`} onClick={() => setTab(t.id)}>
+                    <Icon name={t.icon} size={16} /> <span>{t.ar}</span>
+                    {!!t.badge && <span className="azu-admin-badge" aria-label={`${t.badge} طلب جديد`}>{t.badge}</span>}
+                </button>)}
+            </nav>
+            <div className="azu-admin-main">
+                {tab === 'overview' && <div className="azu-admin-card" dir="rtl">
+                    <h3 className="azu-admin-h">مرحبًا، {role}</h3>
+                    <div className="azu-admin-stats">
+                        <div className="azu-admin-stat"><strong>{mineFiles.length}</strong><span>ملف ضمن نطاقك</span></div>
+                        {(isSuper || isFacultyAdmin) && <div className="azu-admin-stat"><strong>{isSuper ? g.length : g.filter((x) => facultyIds.includes(x.faculty) && x.scope !== 'faculty').length}</strong><span>مشرف</span></div>}
+                        {isSuper && <div className="azu-admin-stat"><strong>{pending}</strong><span>طلب بانتظار موافقتك</span></div>}
+                    </div>
+                    {!isSuper && <><div className="azu-minihead">نطاق صلاحيتك</div>
+                        <ul className="azu-ticks">{g.map((x) => <li key={x.id}>{scopeLabel(x)} · {permLabel(x.perms)}</li>)}</ul></>}
+                    {isSuper && pending > 0 && <button type="button" className="azu-btn azu-btn-primary" onClick={() => setTab('approvals')}>راجع الطلبات</button>}
+                </div>}
+                {tab === 'upload' && <Uploader grants={g} isSuper={!!isSuper} onUploaded={(row) => setFiles([row, ...files])} />}
+                {tab === 'files' && <FilesList grants={g} isSuper={!!isSuper} files={files} setFiles={setFiles} />}
+                {tab === 'admins' && isSuper && <GrantsManager grants={g} reload={reload} />}
+                {tab === 'admins' && isFacultyAdmin && <FacultyAdminsPanel grants={g} facultyIds={facultyIds} requests={requests} reloadAll={reload} />}
+                {tab === 'approvals' && (isSuper || isFacultyAdmin) && <RequestsPanel requests={requests} isSuper={!!isSuper} reloadAll={reload} />}
+                {tab === 'accounts' && isSuper && <AccountsSection grants={g} />}
+            </div>
+        </div>
     </section>;
 }
