@@ -8,3 +8,6 @@ dist/
 # Standalone web build
 web/node_modules/
 web/dist/
+
+worker/.wrangler/
+.wrangler/

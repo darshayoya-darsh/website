@@ -41,25 +41,8 @@ export function clearJustConfirmed() {
     if (session?.justConfirmed) setSession({ ...session, justConfirmed: false });
 }
 
-/* Pick up the session a confirmation-email link drops in the URL hash
-   (#access_token=...&type=signup) and mark it as freshly confirmed. */
-function consumeHashSession() {
-    try {
-        if (typeof window === 'undefined' || !window.location.hash) return;
-        const h = new URLSearchParams(window.location.hash.slice(1));
-        const at = h.get('access_token');
-        const rt = h.get('refresh_token');
-        const type = h.get('type') || '';
-        if (!at || !rt) return;
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-        fetch(`${SUPA_URL}/auth/v1/user`, { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${at}` } })
-            .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-            .then((u) => loadProfile(at, u))
-            .then((u) => setSession({ access_token: at, refresh_token: rt, user: u, justConfirmed: type === 'signup' }))
-            .catch(() => {});
-    } catch { /* no window */ }
-}
-consumeHashSession();
+/* The URL-hash token login was removed on purpose: it let a crafted link sign a
+   visitor into someone else's session. Confirmation uses the numeric code. */
 
 /* A stored session can go stale when the profile changes server-side (e.g. an
    account is made admin). Re-validate on startup and refresh the profile so

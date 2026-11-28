@@ -136,6 +136,7 @@ async function rateHit(env, key, cap, windowMs, token) {
             headers: {
                 apikey: env.SUPA_KEY,
                 Authorization: `Bearer ${token || env.SUPA_KEY}`,
+                'x-azu-rl': env.RL_SECRET || '',
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ p_key: key, p_cap: cap, p_window_ms: windowMs }),
@@ -158,9 +159,11 @@ async function userRateLimited(env, key, cap, windowMs, token) {
     return rateHit(env, `u:${key}`, cap, windowMs, token);
 }
 
+const ALLOWED_ORIGIN = 'https://darshayoya-darsh.github.io';
 function cors(extra = {}) {
     return {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+        'Vary': 'Origin',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         ...extra,
