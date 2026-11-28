@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@instinct/files';
 import { Icon } from './Icon';
 import { useAuth, signIn, signUp, signOut, resendConfirmation, verifyCode, hasAccountFlag, uploadAvatar, removeAvatar, updateProfile, changePassword } from './auth';
+import { BYLAW } from './bylaw';
 import { DEPARTMENTS, PROGRAMS, FACULTIES, YEAR_NAMES } from './data';
 import { myGrants } from './admin';
 import { Avatar, downscaleAvatar } from './Avatar';
@@ -93,6 +94,7 @@ function AccountDetails() {
     const [category, setCategory] = React.useState<'basic' | 'special'>(isProg ? 'special' : 'basic');
     const [dept, setDept] = React.useState(u?.department || '');
     const [year, setYear] = React.useState(u?.year ? String(u.year) : '');
+    const [track, setTrack] = React.useState(u?.track || '');
     const [pw, setPw] = React.useState('');
     const [pw2, setPw2] = React.useState('');
     const [busy, setBusy] = React.useState('');
@@ -101,6 +103,10 @@ function AccountDetails() {
 
     const depts = DEPARTMENTS.filter((d) => !d.onlyFaculties || d.onlyFaculties.includes(faculty));
     const tracks = category === 'special' ? PROGRAMS : depts;
+    /* Tracks (شعب) come only from the bylaw for the chosen department and year. */
+    const bylawTracks = category === 'basic' && dept && year
+        ? (BYLAW[dept]?.[Number(year)] ?? []).filter((t) => faculty === 'boys-cairo' || !t.cairoOnly)
+        : [];
     const run = async (k: string, fn: () => Promise<void>, done: string) => {
         setBusy(k); setMsg(null);
         try { await fn(); setMsg({ k, ok: true, t: done }); }
@@ -113,11 +119,13 @@ function AccountDetails() {
     };
     const saveAcademic = () => {
         if (!faculty || !dept || !year) { setMsg({ k: 'acad', ok: false, t: 'اختر الكلية والقسم أو البرنامج والسنة.' }); return; }
-        run('acad', () => updateProfile({ faculty, department: dept, year: Number(year) }), 'تم حفظ بياناتك الدراسية.');
+        const tr = bylawTracks.some((t) => t.track === track) ? track : null;
+        if (bylawTracks.length > 0 && !tr) { setMsg({ k: 'acad', ok: false, t: 'اختر شعبتك.' }); return; }
+        run('acad', () => updateProfile({ faculty, department: dept, year: Number(year), track: tr }), 'تم حفظ بياناتك الدراسية.');
     };
     const clearAcademic = () => run('acad', async () => {
-        await updateProfile({ faculty: null, department: null, year: null });
-        setFaculty(''); setDept(''); setYear('');
+        await updateProfile({ faculty: null, department: null, year: null, track: null });
+        setFaculty(''); setDept(''); setYear(''); setTrack('');
     }, 'تم مسح بياناتك الدراسية.');
     const savePw = () => {
         if (pw.length < 6) { setMsg({ k: 'pw', ok: false, t: 'كلمة المرور ٦ أحرف على الأقل.' }); return; }
@@ -131,32 +139,38 @@ function AccountDetails() {
         <div className="azu-account-block">
             <h3 className="azu-account-h">بياناتي الدراسية</h3>
             {u.faculty && u.department && u.year
-                ? <p className="azu-auth-note">{facName(u.faculty)} · {trackLabel(u.department)} · {YEAR_NAMES[u.year]}</p>
+                ? <p className="azu-auth-note">{facName(u.faculty)} · {trackLabel(u.department)} · {YEAR_NAMES[u.year]}{u.track ? ` · شعبة ${u.track}` : ''}</p>
                 : <p className="azu-auth-note">لم تُضف بياناتك الدراسية بعد. أضفها لتظهر هنا.</p>}
             <label className="azu-field">الكلية
-                <select className={sel} value={faculty} onChange={(e) => { setFaculty(e.target.value); setDept(''); }}>
+                <select className={sel} value={faculty} onChange={(e) => { setFaculty(e.target.value); setDept(''); setTrack(''); }}>
                     <option value="">اختر…</option>
                     {FACULTIES.map((f) => <option key={f.id} value={f.id}>{f.ar} - {f.city}</option>)}
                 </select>
             </label>
             <label className="azu-field">النوع
-                <select className={sel} value={category} onChange={(e) => { setCategory(e.target.value as 'basic' | 'special'); setDept(''); }}>
+                <select className={sel} value={category} onChange={(e) => { setCategory(e.target.value as 'basic' | 'special'); setDept(''); setTrack(''); }}>
                     <option value="basic">قسم أساسي</option>
                     <option value="special">برنامج متميز</option>
                 </select>
             </label>
             <label className="azu-field">{category === 'special' ? 'البرنامج' : 'القسم'}
-                <select className={sel} value={dept} onChange={(e) => setDept(e.target.value)} disabled={!faculty}>
+                <select className={sel} value={dept} onChange={(e) => { setDept(e.target.value); setTrack(''); }} disabled={!faculty}>
                     <option value="">{faculty ? 'اختر…' : 'اختر الكلية أولًا'}</option>
                     {tracks.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
                 </select>
             </label>
             <label className="azu-field">السنة الدراسية
-                <select className={sel} value={year} onChange={(e) => setYear(e.target.value)}>
+                <select className={sel} value={year} onChange={(e) => { setYear(e.target.value); setTrack(''); }}>
                     <option value="">اختر…</option>
                     {[1, 2, 3, 4].map((y) => <option key={y} value={y}>{YEAR_NAMES[y]}</option>)}
                 </select>
             </label>
+            {bylawTracks.length > 0 && <label className="azu-field">الشعبة
+                <select className={sel} value={track} onChange={(e) => setTrack(e.target.value)}>
+                    <option value="">اختر…</option>
+                    {bylawTracks.map((t) => <option key={t.track} value={t.track}>{t.track}</option>)}
+                </select>
+            </label>}
             {note('acad')}
             <div className="azu-account-actions">
                 <button type="button" className="azu-btn azu-btn-primary" disabled={!!busy} onClick={saveAcademic}>{busy === 'acad' ? 'لحظات…' : 'حفظ البيانات الدراسية'}</button>
