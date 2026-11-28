@@ -9,6 +9,42 @@ import { agentProvider, AgentMessage, AgentSource } from './agent';
    native <dialog> opened with showModal(), which stays on screen. */
 const isFileEnv = () => typeof window !== 'undefined' && (window as any).__AZU_FILE_ENV__ === true;
 
+/* Plain-text reply -> short lines, bullets and clean links. React elements
+   only (no innerHTML). Raw URLs show as a short label, emails as mailto. */
+const TOKEN = /(https?:\/\/[^\s)،]+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)/g;
+function linkLabel(u: string): string {
+    if (/wa\.me\//.test(u)) return 'واتساب';
+    if (/facebook\.com/.test(u)) return 'فيسبوك';
+    if (/instagram\.com/.test(u)) return 'إنستجرام';
+    try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; }
+}
+function Inline({ text }: { text: string }) {
+    const parts = text.split(TOKEN);
+    return <>{parts.map((t, i) => {
+        if (i % 2 === 0) return <React.Fragment key={i}>{t}</React.Fragment>;
+        const trail = /[.,:؛؟!]+$/.exec(t)?.[0] || '';
+        const core = trail ? t.slice(0, -trail.length) : t;
+        const isMail = !/^https?:/.test(core);
+        return <React.Fragment key={i}>
+            <a className="azu-agent-link" dir="ltr" href={isMail ? `mailto:${core}` : core} target={isMail ? undefined : '_blank'} rel="noreferrer">{isMail ? core : linkLabel(core)}</a>{trail}
+        </React.Fragment>;
+    })}</>;
+}
+function ReplyText({ text }: { text: string }) {
+    const blocks: React.ReactNode[] = [];
+    let items: string[] = [];
+    const flush = () => { if (items.length) { const k = blocks.length; const it = items; blocks.push(<ul key={k} className="azu-agent-list">{it.map((x, j) => <li key={j}><Inline text={x} /></li>)}</ul>); items = []; } };
+    text.replace(/\r/g, '').split('\n').forEach((raw, n) => {
+        const line = raw.trim();
+        const m = /^(?:[-•*]|\d+[.)])\s+(.*)$/.exec(line);
+        if (m) { items.push(m[1]); return; }
+        flush();
+        if (line) blocks.push(<p key={`p${n}`} className="azu-agent-p"><Inline text={line} /></p>);
+    });
+    flush();
+    return <>{blocks}</>;
+}
+
 export const AGENT_OPEN_EVENT = 'azu-agent-open';
 
 const SUGGESTIONS = [
@@ -102,7 +138,7 @@ export function AgentChat() {
                         {SUGGESTIONS.map(s => <button key={s} type="button" className="azu-agent-chip" onClick={() => send(s)}>{s}</button>)}
                     </div>}
                     {messages.map((m: AgentMessage) => <div key={m.id} className={`azu-agent-msg ${m.role}`}>
-                        <div className="azu-agent-bubble" dir="auto">{m.text}</div>
+                        <div className="azu-agent-bubble" dir="auto">{m.role === 'assistant' ? <ReplyText text={m.text} /> : m.text}</div>
                         {m.role === 'assistant' && <>
                             {m.sources && m.sources.length > 0 && <div className="azu-agent-sources" dir="rtl">
                                 {m.sources.map((s: AgentSource) => s.url
