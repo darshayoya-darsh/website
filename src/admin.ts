@@ -245,3 +245,15 @@ export function fmtSize(bytes: number): string {
     if (bytes >= 1024) return `${Math.round(bytes / 1024)} كيلو`;
     return `${bytes} بايت`;
 }
+
+/* Root (original) super admin only. The database enforces it. */
+export async function isRoot(): Promise<boolean> {
+    try {
+        const r = await rest('/rpc/is_root', { method: 'POST', body: '{}' });
+        return (await r.json()) === true;
+    } catch { return false; }
+}
+
+export async function setSuper(email: string, on: boolean): Promise<void> {
+    await rest('/rpc/set_super', { method: 'POST', body: JSON.stringify({ p_email: email, p_on: on }) });
+}

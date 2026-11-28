@@ -7,7 +7,7 @@ import { BYLAW } from './bylaw';
 import {
     Grant, FileRow, Scope, AdminRequest, FILE_KINDS, COURSE_BUTTONS, courseLabel, AccountRow,
     myGrants, addGrant, removeGrant, listFiles, listAccounts, canManage, canDelete,
-    listRequests, requestAdd, requestRemove, approveRequest, rejectRequest,
+    listRequests, requestAdd, requestRemove, approveRequest, rejectRequest, isRoot, setSuper,
     uploadCourseFile, deleteFile, fileUrl, validateUpload, fmtSize,
 } from './admin';
 
@@ -313,14 +313,14 @@ function GrantsManager({ grants, reload }: { grants: Grant[]; reload: () => Prom
 
 /* مشرف الكلية: لا يعدّل الصلاحيات مباشرة. يرسل طلب إضافة أو إزالة داخل كليته
    فقط، ولا يُطبَّق إلا بعد موافقة السوبر أدمن. */
-function FacultyAdminsPanel({ grants, facultyIds, requests, reloadAll }: {
-    grants: Grant[]; facultyIds: string[]; requests: AdminRequest[]; reloadAll: () => Promise<void>;
+function FacultyAdminsPanel({ grants, facultyIds, requests, reloadAll, dept }: {
+    grants: Grant[]; facultyIds: string[]; requests: AdminRequest[]; reloadAll: () => Promise<void>; dept?: Grant;
 }) {
     const [email, setEmail] = React.useState('');
-    const [faculty, setFaculty] = React.useState(facultyIds[0] || '');
+    const [faculty, setFaculty] = React.useState(dept ? dept.faculty : facultyIds[0] || '');
     const [scope, setScope] = React.useState<Scope>('cohort');
-    const [category, setCategory] = React.useState<'basic' | 'special'>('basic');
-    const [department, setDepartment] = React.useState('');
+    const [category, setCategory] = React.useState<'basic' | 'special'>(dept ? dept.category : 'basic');
+    const [department, setDepartment] = React.useState(dept ? dept.track || '' : '');
     const [year, setYear] = React.useState('');
     const [perms, setPerms] = React.useState<'full' | 'upload_only'>('upload_only');
     const [rmId, setRmId] = React.useState(0);
@@ -331,7 +331,9 @@ function FacultyAdminsPanel({ grants, facultyIds, requests, reloadAll }: {
     const depts = DEPARTMENTS.filter((d) => !d.onlyFaculties || d.onlyFaculties.includes(faculty));
     const tracks = category === 'special' ? PROGRAMS : depts;
     const ready = email.includes('@') && faculty && department && (scope === 'track' || year);
-    const mine = grants.filter((g) => facultyIds.includes(g.faculty) && g.scope !== 'faculty');
+    const mine = dept
+        ? grants.filter((g) => g.scope === 'cohort' && g.faculty === dept.faculty && g.category === dept.category && g.track === dept.track)
+        : grants.filter((g) => facultyIds.includes(g.faculty) && g.scope !== 'faculty');
     const pendingRemove = new Set(requests.filter((r) => r.status === 'pending' && r.action === 'remove').map((r) => r.target_email + r.track + r.year));
 
     const send = async () => {
@@ -352,26 +354,26 @@ function FacultyAdminsPanel({ grants, facultyIds, requests, reloadAll }: {
     };
 
     return <div className="azu-admin-card" dir="rtl">
-        <h3 className="azu-admin-h">مشرفو كليتك</h3>
+        <h3 className="azu-admin-h">{dept ? `مشرفو دفعات ${trackName(dept.category, dept.track || '')}` : 'مشرفو كليتك'}</h3>
         <p className="azu-admin-note">أي إضافة أو إزالة تُرسل للسوبر أدمن وتُطبَّق بعد موافقته فقط.</p>
         <label className="azu-field">البريد الإلكتروني للمشرف الجديد
             <input className="azu-input" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@example.com" />
         </label>
         <div className="azu-admin-grid">
-            {facultyIds.length > 1 && <Select value={faculty} label="الكلية" onChange={(v) => { setFaculty(v); setDepartment(''); }}>
+            {!dept && facultyIds.length > 1 && <Select value={faculty} label="الكلية" onChange={(v) => { setFaculty(v); setDepartment(''); }}>
                 {facultyIds.map((f) => <option key={f} value={f}>{facultyName(f)}</option>)}
             </Select>}
-            <Select value={scope} label="النطاق" onChange={(v) => setScope(v as Scope)}>
+            {!dept && <Select value={scope} label="النطاق" onChange={(v) => setScope(v as Scope)}>
                 {SCOPES.filter((x) => x.id !== 'faculty').map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-            </Select>
-            <Select value={category} label="النوع" onChange={(v) => { setCategory(v as 'basic' | 'special'); setDepartment(''); }}>
+            </Select>}
+            {!dept && <Select value={category} label="النوع" onChange={(v) => { setCategory(v as 'basic' | 'special'); setDepartment(''); }}>
                 <option value="basic">قسم أساسي</option>
                 <option value="special">برنامج متميز</option>
-            </Select>
-            <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={setDepartment}>
+            </Select>}
+            {!dept && <Select value={department} label={category === 'special' ? 'البرنامج' : 'القسم'} onChange={setDepartment}>
                 <option value="">اختار…</option>
                 {tracks.map((d) => <option key={d.id} value={d.id}>{d.ar}</option>)}
-            </Select>
+            </Select>}
             {scope === 'cohort' && <Select value={year} label="السنة" onChange={setYear}>
                 <option value="">اختار السنة…</option>
                 {[1, 2, 3, 4].map((y) => <option key={y} value={y}>{YEAR_NAMES[y]}</option>)}
@@ -448,6 +450,18 @@ function AccountsSection({ grants }: { grants: Grant[] }) {
     const [err, setErr] = React.useState('');
     const [q, setQ] = React.useState('');
 
+    const me = useAuth()?.user.email;
+    const [root, setRoot] = React.useState(false);
+    const [busyId, setBusyId] = React.useState('');
+    React.useEffect(() => { isRoot().then(setRoot); }, []);
+    const toggleSuper = async (a: AccountRow) => {
+        const on = a.role !== 'admin';
+        if (!window.confirm(on ? `ترقية ${a.email} إلى سوبر أدمن بكل الصلاحيات؟` : `إزالة صلاحية السوبر أدمن من ${a.email}؟`)) return;
+        setBusyId(a.id); setErr('');
+        try { await setSuper(a.email, on); setAccounts(await listAccounts()); }
+        catch (ex) { setErr(ex instanceof Error ? ex.message : 'تعذر التنفيذ.'); }
+        finally { setBusyId(''); }
+    };
     React.useEffect(() => {
         listAccounts().then(setAccounts).catch((ex) => setErr(ex instanceof Error ? ex.message : 'تعذر تحميل الحسابات.'));
     }, []);
@@ -490,6 +504,11 @@ function AccountsSection({ grants }: { grants: Grant[] }) {
                         {grant && <span className="azu-admin-row-meta">صلاحية مشرف: {scopeLabel(grant)}</span>}
                         <span className="azu-admin-row-meta">سجّل: {fmtDate(a.created_at)}</span>
                     </div>
+                    {root && a.email !== me && <div className="azu-admin-row-actions">
+                        <button type="button" className="azu-btn azu-btn-outline azu-btn-sm" disabled={busyId === a.id} onClick={() => toggleSuper(a)}>
+                            {a.role === 'admin' ? 'إزالة سوبر أدمن' : 'ترقية لسوبر أدمن'}
+                        </button>
+                    </div>}
                 </div>;
             })}
             {accounts && shown.length === 0 && <p className="azu-admin-note">لا نتائج مطابقة.</p>}
@@ -543,15 +562,17 @@ export function AdminPage() {
     const g = grants || [];
     const facultyIds = [...new Set(g.filter((x) => x.scope === 'faculty' && x.perms !== 'upload_only').map((x) => x.faculty))];
     const isFacultyAdmin = !isSuper && facultyIds.length > 0;
-    const role = isSuper ? 'سوبر أدمن' : isFacultyAdmin ? 'مشرف كلية' : g.some((x) => x.scope === 'cohort') ? 'مشرف دفعة' : g.some((x) => x.scope === 'track') ? 'مشرف قسم' : 'مشرف';
+    const deptGrant = !isSuper && !isFacultyAdmin ? g.find((x) => x.scope === 'track' && x.perms !== 'upload_only') : undefined;
+    const isDeptAdmin = !!deptGrant;
+    const role = isSuper ? 'سوبر أدمن' : isDeptAdmin ? 'مشرف قسم' : isFacultyAdmin ? 'مشرف كلية' : g.some((x) => x.scope === 'cohort') ? 'مشرف دفعة' : g.some((x) => x.scope === 'track') ? 'مشرف قسم' : 'مشرف';
     const pending = requests.filter((r) => r.status === 'pending').length;
     const mineFiles = files.filter((f) => canManage(g, !!isSuper, f.faculty, f.department, f.year));
     const tabs: { id: Tab; ar: string; icon: string; badge?: number }[] = [
         { id: 'overview', ar: 'نظرة عامة', icon: 'target' },
         { id: 'upload', ar: 'رفع ملف', icon: 'upload' },
         { id: 'files', ar: 'الملفات', icon: 'books' },
-        ...(isSuper || isFacultyAdmin ? [{ id: 'admins' as Tab, ar: 'المشرفون', icon: 'user' }] : []),
-        ...(isSuper || isFacultyAdmin ? [{ id: 'approvals' as Tab, ar: isSuper ? 'الموافقات' : 'طلباتي', icon: 'shield', badge: isSuper ? pending : 0 }] : []),
+        ...(isSuper || isFacultyAdmin || isDeptAdmin ? [{ id: 'admins' as Tab, ar: 'المشرفون', icon: 'user' }] : []),
+        ...(isSuper || isFacultyAdmin || isDeptAdmin ? [{ id: 'approvals' as Tab, ar: isSuper ? 'الموافقات' : 'طلباتي', icon: 'shield', badge: isSuper ? pending : 0 }] : []),
         ...(isSuper ? [{ id: 'accounts' as Tab, ar: 'الحسابات', icon: 'users' }] : []),
     ];
 
@@ -580,8 +601,9 @@ export function AdminPage() {
                 {tab === 'upload' && <Uploader grants={g} isSuper={!!isSuper} onUploaded={(row) => setFiles([row, ...files])} />}
                 {tab === 'files' && <FilesList grants={g} isSuper={!!isSuper} files={files} setFiles={setFiles} />}
                 {tab === 'admins' && isSuper && <GrantsManager grants={g} reload={reload} />}
+                {tab === 'admins' && isDeptAdmin && <FacultyAdminsPanel dept={deptGrant} grants={g} facultyIds={[deptGrant!.faculty]} requests={requests} reloadAll={reload} />}
                 {tab === 'admins' && isFacultyAdmin && <FacultyAdminsPanel grants={g} facultyIds={facultyIds} requests={requests} reloadAll={reload} />}
-                {tab === 'approvals' && (isSuper || isFacultyAdmin) && <RequestsPanel requests={requests} isSuper={!!isSuper} reloadAll={reload} />}
+                {tab === 'approvals' && (isSuper || isFacultyAdmin || isDeptAdmin) && <RequestsPanel requests={requests} isSuper={!!isSuper} reloadAll={reload} />}
                 {tab === 'accounts' && isSuper && <AccountsSection grants={g} />}
             </div>
         </div>
