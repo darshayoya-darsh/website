@@ -12,6 +12,7 @@ import type { BylawTrack } from './bylaw';
 import { AgentChat, AGENT_OPEN_EVENT } from './AgentChat';
 import { AuthPage } from './AuthPage';
 import { AdminPage } from './AdminPage';
+import { MfaGate } from './MfaGate';
 import { Icon, BrandIcon } from './Icon';
 import { MobileNav, SearchOverlay, TopNavLinks, SignInLink } from './nav';
 import { clearJustConfirmed, useAuth, getAuth, SUPA_URL, SUPA_KEY } from './auth';
@@ -1069,6 +1070,7 @@ export function App() {
         <div className="azu-page">
             <TopBar />
             <ConfirmedBanner />
+            <MfaGate />
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/academic" element={<Academic />} />

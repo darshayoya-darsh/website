@@ -326,3 +326,57 @@ export async function changePassword(newPassword: string): Promise<void> {
         throw new Error(arError(d.error_code || '', d.msg || d.message || '', r.status));
     }
 }
+
+/* ---------- Mandatory TOTP step for the super admin ----------
+   The database only treats a session as super when its token is aal2 and the
+   authenticator code was verified within the last hour (see is_super() in
+   db/2026-11-28-super-mfa.sql). These helpers drive the UI side of that. */
+const MFA_WINDOW_S = 3600;
+const MFA_TAB_KEY = 'azu_mfa_tab';
+
+function claims(at: string): any {
+    try { return JSON.parse(atob(at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch { return {}; }
+}
+function totpTime(at: string): number {
+    const c = claims(at);
+    if (c.aal !== 'aal2' || !Array.isArray(c.amr)) return 0;
+    const t = c.amr.filter((a: any) => a?.method === 'totp').map((a: any) => Number(a.timestamp) || 0);
+    return t.length ? Math.max(...t) : 0;
+}
+/* True when this admin must still enter an authenticator code now. A new
+   browser tab or window always asks again, even inside the hour. */
+export function needsMfa(s: AuthSession | null): boolean {
+    if (!s || s.user.role !== 'admin') return false;
+    const t = totpTime(s.access_token);
+    if (!t || Date.now() / 1000 - t > MFA_WINDOW_S) return true;
+    try { return sessionStorage.getItem(MFA_TAB_KEY) !== String(t); } catch { return true; }
+}
+function markTabVerified(at: string) {
+    try { sessionStorage.setItem(MFA_TAB_KEY, String(totpTime(at))); } catch { /* private mode */ }
+    emit();
+}
+export interface MfaState { factorId: string | null; }
+export async function mfaStatus(): Promise<MfaState> {
+    const s = session; if (!s) throw new Error('سجّل دخولك أولًا.');
+    const u = await api('/auth/v1/user', undefined, s.access_token);
+    const f = (u.factors || []).find((x: any) => x.factor_type === 'totp' && x.status === 'verified');
+    return { factorId: f ? f.id : null };
+}
+export async function mfaEnroll(): Promise<{ id: string; qr: string; secret: string }> {
+    const s = session; if (!s) throw new Error('سجّل دخولك أولًا.');
+    const d = await api('/auth/v1/factors', { factor_type: 'totp', friendly_name: `azu-${Date.now()}` }, s.access_token);
+    return { id: d.id, qr: d.totp?.qr_code || '', secret: d.totp?.secret || '' };
+}
+export async function mfaVerify(factorId: string, code: string): Promise<void> {
+    const s = session; if (!s) throw new Error('سجّل دخولك أولًا.');
+    const ch = await api(`/auth/v1/factors/${factorId}/challenge`, {}, s.access_token);
+    let d: any;
+    try { d = await api(`/auth/v1/factors/${factorId}/verify`, { challenge_id: ch.id, code: code.trim() }, s.access_token); }
+    catch (e: any) {
+        if (/invalid|mfa_verification/i.test(String(e.code || ''))) throw new Error('الكود غير صحيح أو انتهى. اكتب الكود الحالي من تطبيق المصادقة.');
+        throw e;
+    }
+    const u = await loadProfile(d.access_token, d.user || (await api('/auth/v1/user', undefined, d.access_token)));
+    setSession({ access_token: d.access_token, refresh_token: d.refresh_token, user: u });
+    markTabVerified(d.access_token);
+}
