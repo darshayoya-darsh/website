@@ -1,5 +1,6 @@
 import React from 'react';
 import { CopyButton } from '@instinct/files';
+import { useAuth } from './auth';
 import { agentProvider, AgentMessage, AgentSource } from './agent';
 
 /* The Instinct File viewer renders the page in a full-height frame where
@@ -77,6 +78,7 @@ export function AgentChat() {
     const [messages, setMessages] = React.useState<AgentMessage[]>([]);
     const [draft, setDraft] = React.useState('');
     const [busy, setBusy] = React.useState(false);
+    const auth = useAuth();
     const [rated, setRated] = React.useState<Record<string, 'up' | 'down'>>({});
     const [reported, setReported] = React.useState<Record<string, boolean>>({});
     const bodyRef = React.useRef<HTMLDivElement>(null);
@@ -100,6 +102,16 @@ export function AgentChat() {
         if (el) el.scrollTo({ top: el.scrollHeight });
     }, [messages, busy, open]);
 
+    const rate = (m: AgentMessage, r: 'up' | 'down') => {
+        const was = rated[m.id];
+        setRated((x: Record<string, 'up' | 'down'>) => { const n = { ...x }; if (n[m.id] === r) delete n[m.id]; else n[m.id] = r; return n; });
+        if (was !== r) {
+            const i = messages.findIndex((x: AgentMessage) => x.id === m.id);
+            const q = i > 0 ? messages[i - 1].text : '';
+            agentProvider.feedback?.({ rating: r, question: q, answer: m.text });
+        }
+    };
+
     const send = async (text: string) => {
         const q = text.trim();
         if (!q || busy) return;
@@ -107,9 +119,19 @@ export function AgentChat() {
         setMessages((m: AgentMessage[]) => [...m, userMsg]);
         setDraft('');
         setBusy(true);
+        const aid = nextId('a');
+        let started = false;
         try {
-            const reply = await agentProvider.send([...messages, userMsg]);
-            setMessages((m: AgentMessage[]) => [...m, { id: nextId('a'), role: 'assistant', text: reply.text, sources: reply.sources }]);
+            const profile = auth ? { faculty: auth.user.faculty, department: auth.user.department, year: auth.user.year, track: auth.user.track } : undefined;
+            const reply = await agentProvider.send([...messages, userMsg], undefined, {
+                profile,
+                onDelta: (t: string) => {
+                    if (!started) { started = true; setBusy(false); setMessages((m: AgentMessage[]) => [...m, { id: aid, role: 'assistant', text: t }]); }
+                    else setMessages((m: AgentMessage[]) => m.map(x => x.id === aid ? { ...x, text: t } : x));
+                },
+            });
+            if (started) setMessages((m: AgentMessage[]) => m.map(x => x.id === aid ? { ...x, text: reply.text, sources: reply.sources } : x));
+            else setMessages((m: AgentMessage[]) => [...m, { id: aid, role: 'assistant', text: reply.text, sources: reply.sources }]);
         } catch {
             setMessages((m: AgentMessage[]) => [...m, { id: nextId('a'), role: 'assistant', text: 'تعذر الاتصال بالمساعد الآن. تأكد من اتصالك بالإنترنت، ثم حاول مرة أخرى.' }]);
         } finally {
@@ -148,11 +170,11 @@ export function AgentChat() {
                             <div className="azu-agent-actions" dir="ltr">
                                 <CopyButton text={m.text} label="نسخ" compact />
                                 <button type="button" title="إجابة مفيدة" aria-label="إجابة مفيدة" className={rated[m.id] === 'up' ? 'on' : ''}
-                                    onClick={() => setRated((r: Record<string, 'up' | 'down'>) => { const n = { ...r }; if (n[m.id] === 'up') delete n[m.id]; else n[m.id] = 'up'; return n; })}>
+                                    onClick={() => rate(m, 'up')}>
                                     <AgentIcon name="up" size={14} />
                                 </button>
                                 <button type="button" title="إجابة غير مفيدة" aria-label="إجابة غير مفيدة" className={rated[m.id] === 'down' ? 'on' : ''}
-                                    onClick={() => setRated((r: Record<string, 'up' | 'down'>) => { const n = { ...r }; if (n[m.id] === 'down') delete n[m.id]; else n[m.id] = 'down'; return n; })}>
+                                    onClick={() => rate(m, 'down')}>
                                     <AgentIcon name="down" size={14} />
                                 </button>
                                 <button type="button" title="الإبلاغ عن معلومة غير دقيقة" aria-label="الإبلاغ عن معلومة غير دقيقة" className={reported[m.id] ? 'on' : ''}

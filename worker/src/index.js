@@ -23,6 +23,8 @@ const SYSTEM_PROMPT = `أنت "مساعد AZU Science"، المساعد الذك
 - معلومات موثقة من مصادر الكلية الرسمية (بروشورات وإعلانات معتمدة)؛ التزم بها حرفيًا عند السؤال عنها ولا تضف إليها: {KNOWLEDGE}
 - هذه المعلومات الموثقة قد لا تكون معروضة على صفحات المنصة نفسها؛ عند الإجابة منها قل إنها من البروشور الرسمي للكلية عبر المنصة، ولا تطلب من الطالب البحث عنها في صفحة البرنامج.
 - الأدوات (من تبويب «أدوات»): حاسبة التقدير، وهي محوّل استرشادي بين النسبة المئوية والتقدير ونقاط الـ GPA وفق هذا المقياس: ممتاز A (4.0) من 90٪، A- (3.7) من 85، جيد جدًا B+ (3.3) من 80، B (3.0) من 75، B- (2.7) من 70، جيد C+ (2.3) من 65، C (2.0) من 60، مقبول C- (1.7) من 57، D+ (1.3) من 55، D (1.0) من 50، وأقل من 50 راسب F. نتائجها استرشادية مبنية على نموذج لوائح الساعات المعتمدة وليست بديلًا عن النتائج الرسمية. وهناك أيضًا مكتبة برامج علمية مقترحة لكل تخصص، وبحث شامل في محتوى المنصة.
+- بيانات الطالب المسجّلة في حسابه: {PROFILE}
+- المصادر: كل معلومة موثقة أخذتها من المعلومات الموثقة أعلاه تقع داخل وسم [slug]. في آخر إجابتك، إن استخدمت أيًا منها، أضف سطرًا أخيرًا منفصلًا بالشكل: SRC: slug1,slug2 (بأسماء الـ slug فقط، حتى ثلاثة). إن لم تستخدم أيًا منها لا تكتب السطر. لا تذكر الـ slug داخل نص الإجابة.
 - الصفحات: فرص (تدريبات ومنح ومسابقات)، أخبار، مجتمع، عن المنصة، أسئلة شائعة، تواصل معنا، الإبلاغ عن مشكلة.
 - الحسابات: التسجيل بالبريد الإلكتروني مع تأكيد البريد. لوحة المشرفين مخصصة للمشرفين فقط.
 - أي ميزة خارج هذا الوصف (نتائج رسمية، جداول امتحانات، أخبار لحظية) غير متاحة حاليًا؛ إن سُئلت عنها قل إنها غير متاحة حاليًا ولا تَعِد بها.
@@ -92,20 +94,99 @@ async function fileCatalog(env) {
 /* Verified knowledge from official faculty sources (brochures, announcements),
    stored in the knowledge_docs table; cached per isolate for 5 minutes.
    Readable through the publishable key (public program info, RLS read-only). */
-let knowledgeCache = { at: 0, text: '' };
-async function knowledgeDocs(env) {
-    if (knowledgeCache.text && Date.now() - knowledgeCache.at < 300_000) return knowledgeCache.text;
+let knowledgeCache = { at: 0, docs: [] };
+async function loadKnowledge(env) {
+    if (knowledgeCache.docs.length && Date.now() - knowledgeCache.at < 300_000) return knowledgeCache.docs;
     try {
-        const r = await fetch(`${env.SUPA_URL}/rest/v1/knowledge_docs?select=title,body&order=updated_at.desc&limit=40`, {
+        const r = await fetch(`${env.SUPA_URL}/rest/v1/knowledge_docs?select=slug,title,body,source_url&order=updated_at.desc&limit=60`, {
             headers: { apikey: env.SUPA_KEY, Authorization: `Bearer ${env.SUPA_KEY}` },
         });
-        if (!r.ok) return knowledgeCache.text;
+        if (!r.ok) return knowledgeCache.docs;
         const rows = await r.json();
-        if (Array.isArray(rows) && rows.length) {
-            knowledgeCache = { at: Date.now(), text: rows.map((d) => `${d.title}:\n${d.body}`).join('\n\n') };
-        }
+        if (Array.isArray(rows) && rows.length) knowledgeCache = { at: Date.now(), docs: rows };
     } catch { /* keep the cached/empty knowledge */ }
-    return knowledgeCache.text;
+    return knowledgeCache.docs;
+}
+
+const DEPT_KEYS = {
+    biology: ['بيولوجي', 'بيولوجى', 'أحياء', 'نبات', 'حيوان', 'ميكروب', 'حشرات'],
+    chemistry: ['كيمياء', 'كيميا'],
+    geology: ['جيولوجي', 'جيولوجى'],
+    'physics-math': ['فيزياء', 'فيزيا', 'رياضيات', 'فلك', 'أرصاد', 'حاسب'],
+};
+const DEPT_LABEL = { 'physics-math': 'فيزياء ورياضيات', chemistry: 'كيمياء', geology: 'جيولوجيا', biology: 'بيولوجي' };
+const FAC_LABEL = { 'boys-cairo': 'علوم بنين القاهرة', 'girls-cairo': 'علوم بنات القاهرة', 'boys-assiut': 'علوم بنين أسيوط', 'girls-assiut': 'علوم بنات أسيوط' };
+const BYLAW_SLUG = { biology: 'bylaw-biology', chemistry: 'bylaw-chemistry', geology: 'bylaw-geology', 'physics-math': 'bylaw-physics-math' };
+
+/* Bylaw docs are large: include one only when the question (or the student's
+   registered department) points at it. Other docs always go in. */
+function selectKnowledge(docs, question, profile) {
+    const q = (question || '');
+    const want = new Set();
+    for (const [dept, keys] of Object.entries(DEPT_KEYS)) {
+        if (keys.some((k) => q.includes(k))) want.add(BYLAW_SLUG[dept]);
+    }
+    if (/لائح|مقرر|مواد|ساعات|كورس|منهج|شعب|سنة|فصل/.test(q) && profile?.department && BYLAW_SLUG[profile.department]) want.add(BYLAW_SLUG[profile.department]);
+    return docs.filter((d) => !d.slug.startsWith('bylaw-') || want.has(d.slug));
+}
+
+/* Groq free tier caps requests (~8k tokens/min): for the fallback keep only the
+   knowledge docs that best match the question, within a character budget. */
+function trimKnowledge(docs, question, budget) {
+    const words = (question || '').split(/[\s،؟?.,!]+/).filter((w) => w.length > 2);
+    const score = (d) => words.reduce((n, w) => n + (d.title.includes(w) ? 3 : 0) + (d.body.includes(w) ? 1 : 0), 0);
+    const ranked = [...docs].sort((a, b) => score(b) - score(a));
+    const out = []; let used = 0;
+    for (const d of ranked) { if (used + d.body.length > budget && out.length) continue; if (used + d.body.length > budget) continue; out.push(d); used += d.body.length; }
+    return out;
+}
+
+function cleanProfile(p) {
+    if (!p || typeof p !== 'object') return null;
+    const out = {};
+    if (FAC_LABEL[p.faculty]) out.faculty = p.faculty;
+    if (DEPT_LABEL[p.department]) out.department = p.department;
+    if (Number.isInteger(p.year) && p.year >= 1 && p.year <= 4) out.year = p.year;
+    if (typeof p.track === 'string' && p.track.length <= 60) out.track = p.track.replace(/[\r\n<>]/g, ' ').trim();
+    return Object.keys(out).length ? out : null;
+}
+function profileText(p) {
+    if (!p) return 'غير مسجّل (الطالب غير مسجّل دخول أو لم يكمل بياناته).';
+    const parts = [];
+    if (p.faculty) parts.push(`الكلية: ${FAC_LABEL[p.faculty]}`);
+    if (p.department) parts.push(`القسم: ${DEPT_LABEL[p.department]}`);
+    if (p.year) parts.push(`الفرقة: ${p.year}`);
+    if (p.track) parts.push(`الشعبة: ${p.track}`);
+    return parts.join('، ') + ' (كما سجّلها الطالب بنفسه في حسابه؛ استخدمها لتخصيص الإجابة ولا تفترض غيرها).';
+}
+
+/* The model ends with "SRC: slug1,slug2"; strip it and map slugs to sources. */
+function splitSources(text, docs) {
+    const m = text.match(/\n?\s*SRC:\s*([A-Za-z0-9_,\s-]*)\s*$/);
+    if (!m) return { text: text.trim(), sources: [] };
+    const slugs = m[1].split(',').map((x) => x.trim()).filter(Boolean);
+    const sources = [];
+    for (const sl of slugs) {
+        const d = docs.find((x) => x.slug === sl);
+        if (d && !sources.find((x) => x.title === d.title)) sources.push(d.source_url ? { title: d.title.slice(0, 90), url: d.source_url } : { title: d.title.slice(0, 90) });
+    }
+    return { text: text.slice(0, m.index).trim(), sources: sources.slice(0, 3) };
+}
+
+async function handleFeedback(request, env) {
+    if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (await rateHit(env, `fb:${ip}`, 30, 3_600_000)) return json({ ok: true });
+    let body;
+    try { body = await request.json(); } catch { return json({ error: 'bad request' }, 400); }
+    const rating = body?.rating === 'down' ? 'down' : body?.rating === 'up' ? 'up' : null;
+    if (!rating) return json({ error: 'bad rating' }, 400);
+    const r = await fetch(`${env.SUPA_URL}/rest/v1/rpc/submit_agent_feedback`, {
+        method: 'POST',
+        headers: { apikey: env.SUPA_KEY, Authorization: `Bearer ${env.SUPA_KEY}`, 'x-azu-rl': env.RL_SECRET || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_rating: rating, p_question: cleanText(body?.question, 1000), p_answer: cleanText(body?.answer, 4000), p_comment: cleanText(body?.comment, 500) }),
+    });
+    return json({ ok: r.ok });
 }
 
 const MAX_MESSAGES = 20;
@@ -451,6 +532,43 @@ async function handleMessage(request, env) {
 
 /* ---------- AI agent (existing) ---------- */
 
+/* Re-streams Gemini SSE as {d: delta} events, holding back a trailing
+   "SRC:" line, then a final {done, text, sources} event. */
+function streamReply(upstream, docs) {
+    const enc = new TextEncoder(), dec = new TextDecoder();
+    const { readable, writable } = new TransformStream();
+    const w = writable.getWriter();
+    const send = (o) => w.write(enc.encode(`data: ${JSON.stringify(o)}\n\n`));
+    (async () => {
+        let full = '', sent = 0, buf = '';
+        try {
+            const reader = upstream.getReader();
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                let i;
+                while ((i = buf.indexOf('\n')) >= 0) {
+                    const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+                    if (!line.startsWith('data:')) continue;
+                    try {
+                        const j = JSON.parse(line.slice(5));
+                        full += (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
+                    } catch { /* ignore */ }
+                }
+                // emit all but a possible SRC tail (hold back from the last "SRC" or last 80 chars)
+                const k = full.lastIndexOf('SRC:');
+                const safe = k >= 0 && full.length - k < 200 ? k : Math.max(sent, full.length - 6);
+                if (safe > sent) { await send({ d: full.slice(sent, safe) }); sent = safe; }
+            }
+        } catch { /* fall through to final */ }
+        const fin = splitSources(full, docs);
+        await send({ done: true, text: fin.text || 'تعذر الحصول على إجابة الآن. حاول مرة أخرى.', sources: fin.sources });
+        await w.close();
+    })();
+    return new Response(readable, { headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', ...cors() } });
+}
+
 async function handleAgent(request, env) {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     if (await rateLimited(env, ip)) {
@@ -477,28 +595,44 @@ async function handleAgent(request, env) {
         return json({ error: 'no user message' }, 400);
     }
 
-    const [catalog, knowledge] = await Promise.all([fileCatalog(env), knowledgeDocs(env)]);
+    const profile = cleanProfile(body?.profile);
+    const [catalog, allDocs] = await Promise.all([fileCatalog(env), loadKnowledge(env)]);
+    const lastQ = history[history.length - 1].content;
+    const docs = selectKnowledge(allDocs, lastQ + ' ' + (history.length > 1 ? history[history.length - 2].content : ''), profile);
+    const knowledge = docs.map((d) => `[${d.slug}] ${d.title}:\n${d.body}`).join('\n\n');
     const systemPrompt = SYSTEM_PROMPT
         .replace('{CATALOG}', catalog || 'تعذر تحميل قائمة الملفات الآن.')
-        .replace('{KNOWLEDGE}', knowledge || 'لا توجد معلومات إضافية موثقة حتى الآن.');
+        .replace('{KNOWLEDGE}', knowledge || 'لا توجد معلومات إضافية موثقة حتى الآن.')
+        .replace('{PROFILE}', profileText(profile));
+    const wantsStream = body?.stream === true;
+    const groqPrompt = SYSTEM_PROMPT
+        .replace('{CATALOG}', (catalog || '').slice(0, 1500))
+        .replace('{KNOWLEDGE}', trimKnowledge(docs, lastQ, 6500).map((d) => `[${d.slug}] ${d.title}:\n${d.body}`).join('\n\n') || 'لا توجد معلومات إضافية موثقة حتى الآن.')
+        .replace('{PROFILE}', profileText(profile));
 
     /* Primary brain: Gemini (free tier). Falls back to the Groq chain when the
        key is missing or the quota/errors kick in. */
     if (env.GEMINI_API_KEY) {
         try {
-            const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-                body: JSON.stringify({
-                    system_instruction: { parts: [{ text: systemPrompt }] },
-                    contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
-                    generationConfig: { maxOutputTokens: 1200, temperature: 0.4 },
-                }),
+            const gbody = JSON.stringify({
+                system_instruction: { parts: [{ text: systemPrompt }] },
+                contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+                generationConfig: { maxOutputTokens: 3000, temperature: 0.4 },
             });
-            if (res.ok) {
-                const data = await res.json();
-                const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('').trim();
-                if (text) return json({ text, sources: [] });
+            const gh = { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY };
+            for (const gm of (env.GEMINI_MODELS || 'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3-flash-preview').split(',')) {
+                const base = `https://generativelanguage.googleapis.com/v1beta/models/${gm.trim()}:`;
+                if (wantsStream) {
+                    const res = await fetch(base + 'streamGenerateContent?alt=sse', { method: 'POST', headers: gh, body: gbody });
+                    if (res.ok && res.body) return streamReply(res.body, docs);
+                } else {
+                    const res = await fetch(base + 'generateContent', { method: 'POST', headers: gh, body: gbody });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const text = (data.candidates?.[0]?.content?.parts || []).filter((p) => !p.thought).map((p) => p.text || '').join('').trim();
+                        if (text) return json(splitSources(text, docs));
+                    }
+                }
             }
         } catch { /* fall through to Groq */ }
     }
@@ -514,7 +648,7 @@ async function handleAgent(request, env) {
                 },
                 body: JSON.stringify({
                     model: model.trim(),
-                    messages: [{ role: 'system', content: systemPrompt }, ...history],
+                    messages: [{ role: 'system', content: groqPrompt }, ...history],
                     max_tokens: 1200,
                     temperature: 0.4,
                 }),
@@ -523,7 +657,7 @@ async function handleAgent(request, env) {
             const data = await res.json();
             const text = (data.choices?.[0]?.message?.content || '').trim();
             if (!text) continue;
-            return json({ text, sources: [] });
+            return json(splitSources(text, docs));
         } catch { /* try next model */ }
     }
     return json({
@@ -542,6 +676,7 @@ export default {
             if (url.pathname === '/upload' && request.method === 'POST') return await handleUpload(request, env);
             if (url.pathname === '/delete' && request.method === 'POST') return await handleDelete(request, env);
             if (url.pathname === '/file-url' && request.method === 'GET') return await handleFileUrl(request, env, url);
+            if (url.pathname === '/feedback') return await handleFeedback(request, env);
             if (url.pathname === '/message') return await handleMessage(request, env);
             if (url.pathname === '/' || url.pathname === '') return await handleAgent(request, env);
         } catch {
