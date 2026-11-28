@@ -367,7 +367,12 @@ export async function mfaStatus(): Promise<MfaState> {
 export async function mfaEnroll(): Promise<{ id: string; qr: string; secret: string }> {
     const s = session; if (!s) throw new Error('سجّل دخولك أولًا.');
     const d = await api('/auth/v1/factors', { factor_type: 'totp', friendly_name: `azu-${Date.now()}` }, s.access_token);
-    return { id: d.id, qr: d.totp?.qr_code || '', secret: d.totp?.secret || '' };
+    /* Supabase returns the QR as an unencoded svg data URI, which some browsers
+       (Brave on Android) refuse to draw. Re-encode the svg safely. */
+    let qr = String(d.totp?.qr_code || '');
+    const i = qr.indexOf('<svg');
+    if (i >= 0) qr = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(qr.slice(i));
+    return { id: d.id, qr, secret: d.totp?.secret || '' };
 }
 export async function mfaVerify(factorId: string, code: string): Promise<void> {
     const s = session; if (!s) throw new Error('سجّل دخولك أولًا.');
